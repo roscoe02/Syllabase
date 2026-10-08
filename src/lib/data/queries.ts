@@ -40,6 +40,7 @@ export async function listEvents(supabase: SupabaseClient, fromIso: string, toIs
   const { data } = await supabase
     .from("events")
     .select("id, title, kind, starts_at, all_day, weight_percent, source, courses(id, code)")
+    .is("replaced_by", null)
     .gte("starts_at", fromIso)
     .lt("starts_at", toIso)
     .order("starts_at")
@@ -83,6 +84,7 @@ export async function getCourse(supabase: SupabaseClient, id: string) {
       .from("events")
       .select("id, title, kind, starts_at, all_day, weight_percent, source")
       .eq("course_id", id)
+      .is("replaced_by", null)
       .order("starts_at"),
   ]);
   if (!course) return null;

@@ -1,7 +1,11 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { MODELS } from "@/lib/ai/client";
 import { dropInvalidDates, ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
+import { matchCourseForSyllabus } from "@/lib/calendar/match";
+import { syncStaleFeeds } from "@/lib/calendar/sync-feed";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { saveSyllabus } from "@/lib/syllabus/save";
 
 /**
@@ -30,8 +34,13 @@ export async function POST(request: Request) {
   const { documentId, courseId, source, term } = body.data;
   const syllabus = dropInvalidDates(body.data.syllabus);
 
-  const { data: profile } = await supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle();
+  const [{ data: profile }, { data: courses }] = await Promise.all([
+    supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
+    supabase.from("courses").select("id, code, section, canvas_key"),
+  ]);
   const tz = profile?.timezone ?? "America/Chicago";
+  // A course that already exists (from a Canvas feed, or an earlier upload) gets this syllabus instead of a twin.
+  const existing = courseId ? null : matchCourseForSyllabus(courses ?? [], syllabus.course_code, syllabus.section);
 
   const { courseId: savedId, events, error } = await saveSyllabus(supabase, {
     syllabus,
@@ -39,10 +48,12 @@ export async function POST(request: Request) {
     tz,
     model: MODELS.default,
     documentId,
-    courseId,
+    courseId: courseId ?? existing?.id,
     source,
   });
   if (error || !savedId) return serverError("syllabus/confirm save", error, "Couldn't save the course. Please try again.");
 
+  // Pair the new syllabus items with Canvas items right away instead of at the next sync.
+  after(() => syncStaleFeeds(createAdminClient(), userId, { force: true }));
   return Response.json({ courseId: savedId, events });
 }

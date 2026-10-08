@@ -3,7 +3,10 @@ import { Suspense } from "react";
 import { getProfile } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { ConfirmSubmit } from "@/components/confirm-submit";
-import { deleteAccount, deleteAllCourses, regenerateIcsToken, updateTimezone } from "./actions";
+import { formatDay, formatTime } from "@/lib/format";
+import { deleteAccount, deleteAllCourses, disconnectFeed, regenerateIcsToken, syncFeedNow, updateTimezone } from "./actions";
+import { CanvasConnect } from "./canvas-connect";
+import { CanvasHowTo } from "./canvas-how-to";
 import { CopyField } from "./copy-field";
 
 export const metadata = { title: "Settings · Syllabase" };
@@ -29,7 +32,11 @@ async function siteUrl() {
 
 async function Settings() {
   const { supabase, email } = await getCurrentUser();
-  const [{ timezone, icsToken }, base] = await Promise.all([getProfile(supabase), siteUrl()]);
+  const [{ timezone, icsToken }, base, { data: feeds }] = await Promise.all([
+    getProfile(supabase),
+    siteUrl(),
+    supabase.from("calendar_feeds").select("id, provider, last_synced_at, last_error, created_at").order("created_at"),
+  ]);
   const feedUrl = `${base}/api/calendar/${icsToken}.ics`;
   const webcal = feedUrl.replace(/^https?:\/\//, "webcal://");
   const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
@@ -37,6 +44,45 @@ async function Settings() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-12">
+      <section id="canvas" aria-labelledby="canvas-h" className="flex flex-col gap-4">
+        <div>
+          <h2 id="canvas-h" className="font-medium">Canvas calendar</h2>
+          <p className="mt-1 text-ink-muted">
+            Bring in every due date from Canvas. Items are matched to your courses, and anything that&apos;s also in a
+            syllabus shows once, with Canvas&apos;s due time and the syllabus&apos;s grade weight. It updates daily.
+          </p>
+        </div>
+        <CanvasHowTo />
+        {(feeds ?? []).length > 0 && (
+          <ul className="divide-y divide-rule border-y border-rule">
+            {(feeds ?? []).map((f) => (
+              <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+                <div className="mr-auto flex flex-col">
+                  <span className="font-medium capitalize">{f.provider} calendar</span>
+                  <span className="text-sm text-ink-muted">
+                    {f.last_error
+                      ? f.last_error
+                      : f.last_synced_at
+                        ? `Last synced ${formatDay(f.last_synced_at, timezone)}, ${formatTime(f.last_synced_at, timezone)}`
+                        : "Not synced yet"}
+                  </span>
+                </div>
+                <form action={syncFeedNow.bind(null, f.id)}>
+                  <button type="submit" className="btn-secondary">Sync now</button>
+                </form>
+                <form action={disconnectFeed.bind(null, f.id)}>
+                  <ConfirmSubmit message="Disconnect this calendar? Its items leave your calendar." className="btn-quiet">
+                    Disconnect
+                  </ConfirmSubmit>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+        <CanvasConnect />
+        <p className="text-sm text-ink-muted">The link is private. Syllabase stores it encrypted and never shows it again.</p>
+      </section>
+
       <section id="calendar-export" aria-labelledby="export-h" className="flex flex-col gap-4">
         <div>
           <h2 id="export-h" className="font-medium">Your calendar in Google, Apple or Outlook</h2>
@@ -80,7 +126,9 @@ async function Settings() {
 
       <section aria-labelledby="clear-h" className="flex flex-col gap-3 border-t border-rule pt-8">
         <h2 id="clear-h" className="font-medium">Remove all courses</h2>
-        <p className="text-ink-muted">Clears every course, calendar item and uploaded syllabus. Your account and settings stay.</p>
+        <p className="text-ink-muted">
+          Clears every course, calendar item and uploaded syllabus, and disconnects Canvas. Your account and settings stay.
+        </p>
         <form action={deleteAllCourses}>
           <ConfirmSubmit message="Remove all your courses and calendar items? This can't be undone." className="btn-secondary">
             Remove all courses

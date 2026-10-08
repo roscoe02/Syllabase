@@ -1,17 +1,16 @@
 import { z } from "zod";
 import { fetchFeed } from "@/lib/calendar/import-ics";
+import { syncFeed } from "@/lib/calendar/sync-feed";
 import { encryptSecret, hashSecret } from "@/lib/security/crypto";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 import { UnsafeUrlError } from "@/lib/security/safe-fetch";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * POST /api/feeds/import  { url, provider?, label? }
- * Saves a Canvas/Blackboard/etc. calendar feed (URL encrypted at rest, never sent back to the
- * browser) and does a first sync.
- * Re-sync: daily Vercel Cron (Hobby limit) + on dashboard open, throttled to once an hour per feed.
- *
- * TODO: match ImportedEvent.courseCode to the user's courses (create courses for unknown codes).
+ * Connects a Canvas/Blackboard/etc. calendar feed (URL encrypted at rest, never sent back to the browser)
+ * and does the first sync (see syncFeed). Re-sync: daily cron + after the dashboard renders, at most hourly.
  */
 
 const Body = z.object({
@@ -43,35 +42,20 @@ export async function POST(request: Request) {
   }
 
   // Saving the same link again (webcal:// or https://) keeps the existing feed.
-  const { error: feedError } = await supabase.from("calendar_feeds").upsert(
-    {
-      user_id: userId,
-      url_encrypted: encryptSecret(url),
-      url_hash: hashSecret(url.replace(/^webcal:\/\//i, "https://")),
-      provider,
-      label,
-      last_synced_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,url_hash", ignoreDuplicates: true },
-  );
-  if (feedError) return serverError("feeds/import insert feed", feedError);
+  const urlHash = hashSecret(url.replace(/^webcal:\/\//i, "https://"));
+  const { error: saveError } = await supabase
+    .from("calendar_feeds")
+    .upsert(
+      { user_id: userId, url_encrypted: encryptSecret(url), url_hash: urlHash, provider, label },
+      { onConflict: "user_id,url_hash", ignoreDuplicates: true },
+    );
+  if (saveError) return serverError("feeds/import save", saveError);
+  const { data: feed, error: findError } = await supabase.from("calendar_feeds").select("id").eq("url_hash", urlHash).single();
+  if (findError || !feed) return serverError("feeds/import find", findError);
 
-  const { error } = await supabase.from("events").upsert(
-    events.map((e) => ({
-      user_id: userId,
-      source: "ics",
-      source_uid: e.sourceUid,
-      kind: e.kind,
-      title: e.title.slice(0, 300),
-      description: e.description?.slice(0, 5000) ?? null,
-      url: e.url && /^https:\/\//i.test(e.url) ? e.url : null,
-      starts_at: e.startsAt.toISOString(),
-      ends_at: e.endsAt?.toISOString() ?? null,
-      all_day: e.allDay,
-    })),
-    { onConflict: "user_id,source,source_uid" },
-  );
-  if (error) return serverError("feeds/import upsert events", error);
-
-  return Response.json({ imported: events.length });
+  try {
+    return Response.json(await syncFeed(createAdminClient(), feed.id, events));
+  } catch (err) {
+    return serverError("feeds/import sync", err, "Saved the link, but the first sync failed. It will retry automatically.");
+  }
 }

@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
+import { syncFeed } from "@/lib/calendar/sync-feed";
 import { deleteCourses } from "@/lib/data/courses";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { deleteUserAndFiles } from "@/lib/supabase/delete-user";
 import { getCurrentUser } from "@/lib/data/user";
 
@@ -18,6 +20,24 @@ export async function updateTimezone(formData: FormData) {
   if (!Intl.supportedValuesOf("timeZone").includes(tz)) return;
   const { supabase, id } = await getCurrentUser();
   await supabase.from("profiles").update({ timezone: tz }).eq("id", id);
+  refresh();
+}
+
+/** Re-syncs one of the student's calendar feeds now. */
+export async function syncFeedNow(feedId: string) {
+  const { supabase } = await getCurrentUser();
+  // User-scoped lookup first: RLS proves the feed is theirs before the admin client touches it.
+  const { data: feed } = await supabase.from("calendar_feeds").select("id").eq("id", feedId).maybeSingle();
+  if (!feed) return;
+  await syncFeed(createAdminClient(), feed.id).catch((err) => console.error("syncFeedNow", err instanceof Error ? err.name : err));
+  refresh();
+}
+
+/** Disconnects a feed; its items leave the calendar and any syllabus items they covered come back. */
+export async function disconnectFeed(feedId: string) {
+  const { supabase } = await getCurrentUser();
+  const { error } = await supabase.from("calendar_feeds").delete().eq("id", feedId);
+  if (error) console.error("disconnectFeed failed", { name: error.name });
   refresh();
 }
 
