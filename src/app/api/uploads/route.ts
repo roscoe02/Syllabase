@@ -10,6 +10,7 @@ import { parseBody, requireUser, serverError } from "@/lib/security/request";
  */
 
 const MAX_BYTES = 20 * 1024 * 1024;
+const GUEST_MAX_UPLOADS = 2;
 
 const Body = z.object({
   filename: z.string().trim().min(1).max(200),
@@ -21,10 +22,20 @@ const Body = z.object({
 export async function POST(request: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, userId } = auth;
+  const { supabase, userId, isGuest } = auth;
 
   const limited = await rateLimit("upload", userId);
   if (limited) return limited;
+
+  if (isGuest) {
+    const { count } = await supabase.from("documents").select("id", { count: "exact", head: true });
+    if ((count ?? 0) >= GUEST_MAX_UPLOADS) {
+      return Response.json(
+        { error: `Guest accounts can add ${GUEST_MAX_UPLOADS} syllabi. Sign in with email to add more.` },
+        { status: 403 },
+      );
+    }
+  }
 
   const body = await parseBody(request, Body);
   if ("error" in body) return body.error;

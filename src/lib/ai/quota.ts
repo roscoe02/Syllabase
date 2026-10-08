@@ -8,18 +8,32 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * so 1,000,000/day is about $0.10 per user per day on Haiku 5.5.
  */
 const DAILY_BUDGET = Number(process.env.DAILY_TOKEN_BUDGET ?? 1_000_000);
+/** Guests: a few syllabus reads a day. */
+const GUEST_DAILY_BUDGET = Number(process.env.GUEST_DAILY_TOKEN_BUDGET ?? 200_000);
+/** Everyone together (about $1/day): the backstop if lots of guests show up at once. */
+const SITE_DAILY_BUDGET = Number(process.env.SITE_DAILY_TOKEN_BUDGET ?? 10_000_000);
 
-export async function checkQuota(userId: string): Promise<Response | null> {
+export async function checkQuota(userId: string, isGuest = false): Promise<Response | null> {
   const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("usage_daily")
-    .select("weighted_tokens")
-    .eq("user_id", userId)
-    .eq("day", new Date().toISOString().slice(0, 10))
-    .maybeSingle();
-  if ((data?.weighted_tokens ?? 0) < DAILY_BUDGET) return null;
+  const [{ data }, { data: siteTotal }] = await Promise.all([
+    supabase
+      .from("usage_daily")
+      .select("weighted_tokens")
+      .eq("user_id", userId)
+      .eq("day", new Date().toISOString().slice(0, 10))
+      .maybeSingle(),
+    supabase.rpc("site_usage_today"),
+  ]);
+  if (Number(siteTotal ?? 0) >= SITE_DAILY_BUDGET) {
+    return Response.json({ error: "Syllabase has reached its AI limit for today. Please try again tomorrow." }, { status: 429 });
+  }
+  if ((data?.weighted_tokens ?? 0) < (isGuest ? GUEST_DAILY_BUDGET : DAILY_BUDGET)) return null;
   return Response.json(
-    { error: "You've reached today's AI limit. It resets at midnight UTC." },
+    {
+      error: isGuest
+        ? "Guest accounts get a few syllabus reads a day. Sign in with email for more."
+        : "You've reached today's AI limit. It resets at midnight UTC.",
+    },
     { status: 429 },
   );
 }

@@ -7,6 +7,7 @@
   --ink-muted: #4a4741; /* 8.7:1 on paper */
   --rule: #ddd8cc;
   --highlight: #f5d547; /* background only, never text; ink on it: 11.9:1 */
+  color-scheme: light; /* native controls (date/time pickers, selects) match the theme */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -16,6 +17,7 @@
     --ink-muted: #b8b3a8; /* 8.6:1 on dark paper */
     --rule: #34333a;
     --highlight: #544608; /* ink on it: 7.6:1 */
+    color-scheme: dark;
   }
 }
 

@@ -49,7 +49,7 @@ export function MonthGrid({ month, events, tz, today }: { month: string; events:
                     </span>
                     <ul className="flex flex-col gap-0.5">
                       {dayEvents.slice(0, 3).map((e) => (
-                        <li key={e.id} className="truncate text-xs" title={`${courseLabel(e.course)} ${e.title}`}>
+                        <li key={e.id} className="text-xs leading-snug [overflow-wrap:anywhere]" title={`${courseLabel(e.course)} ${e.title}`}>
                           <span className="num text-ink-muted">{courseLabel(e.course)}</span>{" "}
                           <span className={e.kind === "exam" ? "font-medium" : ""}>{e.title}</span>
                         </li>

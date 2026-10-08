@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { dropInvalidDates, type ParsedSyllabus } from "@/lib/ai/syllabus-schema";
+import { z } from "zod";
+import { dropInvalidDates, ExtractedSyllabus, fromExtracted, ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 import { checkFreshness } from "./staleness";
 import { termWindow, upcomingTerms } from "./terms";
 import { syllabusToEvents } from "./to-events";
@@ -75,5 +76,29 @@ describe("dropInvalidDates", () => {
     });
     expect(messy.graded_items.map((i) => [i.due_date, i.due_time])).toEqual([[null, null], [null, "23:59"], ["2026-10-14", "23:59"]]);
     expect(() => syllabusToEvents(messy, "America/Chicago")).not.toThrow();
+  });
+});
+
+describe("ExtractedSyllabus", () => {
+  // The Anthropic API rejects output schemas with more than 16 nullable (union) fields.
+  it("stays under the structured-output union limit", () => {
+    const json = JSON.stringify(z.toJSONSchema(ExtractedSyllabus));
+    const unions = (json.match(/"anyOf"/g) ?? []).length + (json.match(/"type":\[/g) ?? []).length;
+    expect(unions).toBeLessThanOrEqual(16);
+  });
+
+  it("turns empty text back into missing values", () => {
+    const extracted = ExtractedSyllabus.parse({
+      ...base,
+      course_code: "",
+      instructor: { name: "Dr. Example", email: "", office: " " },
+      grading: [{ name: "Final", weight_percent: null, drop_lowest: null, notes: "" }],
+      graded_items: [{ ...base.graded_items[0], component: "", due_date: "", due_time: "" }],
+      policies: { late_work: "", attendance: "", ai_usage: "No AI on homework", makeup_exams: "", curve: "" },
+    });
+    const parsed = fromExtracted(extracted);
+    expect(parsed.policies.ai_usage).toBe("No AI on homework");
+    expect(ParsedSyllabus.safeParse(parsed).success).toBe(true);
+    expect([parsed.course_code, parsed.instructor.email, parsed.policies.curve, parsed.graded_items[0].due_date]).toEqual([null, null, null, null]);
   });
 });

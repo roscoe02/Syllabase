@@ -31,9 +31,9 @@ const Body = z.object({
 export async function POST(request: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { userId } = auth;
+  const { userId, isGuest } = auth;
 
-  const limited = (await rateLimit("ai", userId)) ?? (await checkQuota(userId));
+  const limited = (await rateLimit("ai", userId)) ?? (await checkQuota(userId, isGuest));
   if (limited) return limited;
 
   const body = await parseBody(request, Body);

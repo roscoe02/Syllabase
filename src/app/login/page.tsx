@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { LinkError } from "./link-error";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in · Syllabase" };
@@ -10,6 +12,9 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold">Sign in to Syllabase</h1>
         <p className="text-ink-muted">Your syllabi, uploads and calendar are saved to your account.</p>
       </header>
+      <Suspense fallback={null}>
+        <LinkError />
+      </Suspense>
       <LoginForm />
       <p className="text-sm text-ink-muted">
         By continuing you agree to the{" "}

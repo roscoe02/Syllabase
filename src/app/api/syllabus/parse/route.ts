@@ -31,9 +31,9 @@ const Body = z.object({
 export async function POST(request: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, userId } = auth;
+  const { supabase, userId, isGuest } = auth;
 
-  const limited = (await rateLimit("ai", userId)) ?? (await checkQuota(userId));
+  const limited = (await rateLimit("ai", userId)) ?? (await checkQuota(userId, isGuest));
   if (limited) return limited;
 
   const body = await parseBody(request, Body);
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { syllabus, usage } = await extractSyllabusFromPdf(bytes.toString("base64"), { termStart: firstDay });
+    const { syllabus, usage } = await extractSyllabusFromPdf(bytes.toString("base64"), { termName: term?.name, termStart: firstDay });
     await recordUsage(userId, usage);
     const freshness = term ? checkFreshness(syllabus, term) : null;
     return Response.json({ syllabus, freshness });

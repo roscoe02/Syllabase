@@ -13,7 +13,8 @@ export async function requireUser() {
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) return { error: Response.json({ error: "Please sign in." }, { status: 401 }) } as const;
-  return { supabase, userId } as const;
+  // Guests are Supabase anonymous users: same data rules, smaller limits.
+  return { supabase, userId, isGuest: data.claims.is_anonymous === true } as const;
 }
 
 export async function parseBody<T extends z.ZodType>(request: Request, schema: T, maxBytes = 64 * 1024) {
