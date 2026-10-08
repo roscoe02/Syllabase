@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Agenda } from "@/components/agenda";
-import { CrunchStrip } from "@/components/crunch-strip";
-import { crunchWeeks, weeklyLoad } from "@/lib/calendar/crunch";
+import { BigWeeks } from "@/components/big-weeks";
+import { bigWeeks } from "@/lib/calendar/big-weeks";
 import { getProfile, listCourses, listEvents, listSyllabusStatus } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { courseLabel } from "@/lib/format";
@@ -51,16 +51,7 @@ async function Dashboard() {
     const key = dateKey(new Date(e.startsAt), tz);
     return key >= today && key < addDaysKey(today, 14) && (e.allDay || e.startsAt >= now.toISOString());
   });
-  const loads = weeklyLoad(upcoming.map((e) => ({ startsAt: new Date(e.startsAt), weightPercent: e.weightPercent, courseId: e.course?.id ?? null })), tz);
-  const weeks = Array.from({ length: 12 }, (_, i) => {
-    const key = addDaysKey(thisWeek, i * 7);
-    return loads.find((l) => l.weekStart === key) ?? { weekStart: key, totalWeight: 0, unweightedCount: 0, eventCount: 0 };
-  });
-  const heavy = new Set(crunchWeeks(weeks).map((w) => w.weekStart));
-  const needsInfo = courses.filter((c) => {
-    const s = status.get(c.id);
-    return s && (s.missing.length > 0 || s.freshness !== "current");
-  });
+  const weeksAhead = bigWeeks(upcoming.filter((e) => dateKey(new Date(e.startsAt), tz) >= today), tz);
 
   return (
     <>
@@ -74,12 +65,12 @@ async function Dashboard() {
         />
       </section>
 
-      <section aria-labelledby="crunch-h" className="flex flex-col gap-3">
+      <section aria-labelledby="big-h" className="flex flex-col gap-3">
         <div>
-          <h2 id="crunch-h" className="font-medium">Your semester by week</h2>
-          <p className="text-sm text-ink-muted">Percent of your grades due each week, across all courses. &quot;+2&quot; means two items with no known weight.</p>
+          <h2 id="big-h" className="font-medium">Big weeks ahead</h2>
+          <p className="text-sm text-ink-muted">The weeks with the most graded work due in the next three months.</p>
         </div>
-        <CrunchStrip weeks={weeks} heavy={heavy} currentWeek={thisWeek} />
+        <BigWeeks weeks={weeksAhead} tz={tz} thisWeek={thisWeek} />
       </section>
 
       <section aria-labelledby="courses-h" className="flex flex-col gap-3">
@@ -96,15 +87,17 @@ async function Dashboard() {
                   {courseLabel(c)}{c.section ? `.${c.section}` : ""}
                 </Link>
                 <span className="text-ink-muted">{c.title}</span>
-                {s && s.missing.length > 0 && <span className="text-sm">{s.missing.length} missing</span>}
+                {s && s.missing.length > 0 && (
+                  <Link href={`/courses/${c.id}#missing-h`} className="text-sm text-ink-muted underline-offset-2 hover:underline">
+                    Not in syllabus: {s.missing.slice(0, 2).join(", ")}
+                    {s.missing.length > 2 && ` and ${s.missing.length - 2} more`}
+                  </Link>
+                )}
                 {s && s.freshness === "outdated" && <span className="text-sm font-medium">Syllabus may be outdated</span>}
               </li>
             );
           })}
         </ul>
-        {needsInfo.length > 0 && (
-          <p className="text-sm text-ink-muted">Open a course to fill in what its syllabus left out.</p>
-        )}
       </section>
     </>
   );
@@ -117,8 +110,9 @@ function DashboardSkeleton() {
         <div className="skeleton h-5 w-40" />
         {Array.from({ length: 4 }, (_, i) => <div key={i} className="skeleton h-10 w-full" />)}
       </div>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-12">
-        {Array.from({ length: 12 }, (_, i) => <div key={i} className="skeleton h-16" />)}
+      <div className="flex flex-col gap-3">
+        <div className="skeleton h-5 w-40" />
+        {Array.from({ length: 2 }, (_, i) => <div key={i} className="skeleton h-16 w-full" />)}
       </div>
     </div>
   );

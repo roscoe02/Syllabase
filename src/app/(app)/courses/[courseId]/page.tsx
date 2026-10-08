@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getCourse, getProfile } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { courseLabel, formatDay, formatTime, formatWeight } from "@/lib/format";
+import { deleteCourse } from "./actions";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
@@ -60,6 +62,9 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
       {parsed && parsed.missing.length > 0 && (
         <section aria-labelledby="missing-h">
           <h2 id="missing-h" className="font-medium">Not in the syllabus</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Things students usually need that this syllabus doesn&apos;t say. Check Canvas or ask your professor.
+          </p>
           <ul className="mt-3 flex flex-wrap gap-2">
             {parsed.missing.map((m) => <li key={m} className="rounded-sm border border-dashed border-ink-muted px-2 py-1 text-sm">{m}</li>)}
           </ul>
@@ -134,9 +139,17 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
         </section>
       )}
 
-      <p className="text-sm text-ink-muted">
-        <Link href="/courses/new" className="underline underline-offset-2">Add another course</Link>
-      </p>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule pt-6 text-sm">
+        <Link href="/courses/new" className="text-ink-muted underline underline-offset-2">Add another course</Link>
+        <form action={deleteCourse.bind(null, course.id)}>
+          <ConfirmSubmit
+            message={`Remove ${courseLabel(course)}? Its calendar items and uploaded syllabus are deleted too.`}
+            className="btn-quiet px-0"
+          >
+            Remove this course
+          </ConfirmSubmit>
+        </form>
+      </div>
     </>
   );
 }
