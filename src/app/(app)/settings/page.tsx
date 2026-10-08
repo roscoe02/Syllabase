@@ -2,7 +2,8 @@ import { headers } from "next/headers";
 import { Suspense } from "react";
 import { getProfile } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
-import { deleteAccount, regenerateIcsToken, updateTimezone } from "./actions";
+import { ConfirmSubmit } from "@/components/confirm-submit";
+import { deleteAccount, deleteAllCourses, regenerateIcsToken, updateTimezone } from "./actions";
 import { CopyField } from "./copy-field";
 
 export const metadata = { title: "Settings · Syllabase" };
@@ -75,6 +76,16 @@ async function Settings() {
         <div>
           <a href="/api/export" className="btn-secondary">Download my data</a>
         </div>
+      </section>
+
+      <section aria-labelledby="clear-h" className="flex flex-col gap-3 border-t border-rule pt-8">
+        <h2 id="clear-h" className="font-medium">Remove all courses</h2>
+        <p className="text-ink-muted">Clears every course, calendar item and uploaded syllabus. Your account and settings stay.</p>
+        <form action={deleteAllCourses}>
+          <ConfirmSubmit message="Remove all your courses and calendar items? This can't be undone." className="btn-secondary">
+            Remove all courses
+          </ConfirmSubmit>
+        </form>
       </section>
 
       <section aria-labelledby="delete-h" className="flex flex-col gap-3 border-t border-rule pt-8">

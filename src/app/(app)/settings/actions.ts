@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
+import { deleteCourses } from "@/lib/data/courses";
 import { deleteUserAndFiles } from "@/lib/supabase/delete-user";
 import { getCurrentUser } from "@/lib/data/user";
 
@@ -17,6 +18,14 @@ export async function updateTimezone(formData: FormData) {
   if (!Intl.supportedValuesOf("timeZone").includes(tz)) return;
   const { supabase, id } = await getCurrentUser();
   await supabase.from("profiles").update({ timezone: tz }).eq("id", id);
+  refresh();
+}
+
+/** Removes every course, calendar item and uploaded syllabus. The account and settings stay. */
+export async function deleteAllCourses() {
+  const { supabase, id } = await getCurrentUser();
+  const error = await deleteCourses(supabase, id);
+  if (error) console.error("deleteAllCourses failed", { name: error.name });
   refresh();
 }
 

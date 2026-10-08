@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import { Agenda } from "@/components/agenda";
-import { CrunchStrip } from "@/components/crunch-strip";
+import { BigWeeks } from "@/components/big-weeks";
 import { MonthGrid } from "@/components/month-grid";
 import type { ParsedSyllabus } from "@/lib/ai/syllabus-schema";
-import { crunchWeeks, weeklyLoad } from "@/lib/calendar/crunch";
+import { bigWeeks } from "@/lib/calendar/big-weeks";
 import type { CalendarEvent } from "@/lib/data/queries";
-import { addDaysKey } from "@/lib/time";
 import { ReviewPreview } from "./review-preview";
 
 /**
@@ -72,13 +71,6 @@ const SYLLABUS: ParsedSyllabus = {
 export default function PreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
   const thisWeek = "2026-10-05";
-  const loads = weeklyLoad(EVENTS.map((e) => ({ startsAt: new Date(e.startsAt), weightPercent: e.weightPercent, courseId: e.course?.id ?? null })), TZ);
-  const weeks = Array.from({ length: 12 }, (_, i) => {
-    const key = addDaysKey(thisWeek, i * 7);
-    return loads.find((l) => l.weekStart === key) ?? { weekStart: key, totalWeight: 0, unweightedCount: 0, eventCount: 0 };
-  });
-  const heavy = new Set(crunchWeeks(weeks).map((w) => w.weekStart));
-
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 py-10">
       <section id="dashboard" className="flex flex-col gap-10">
@@ -88,8 +80,8 @@ export default function PreviewPage() {
           <Agenda events={EVENTS.slice(0, 7)} tz={TZ} today={TODAY} empty={null} />
         </div>
         <div className="flex flex-col gap-3">
-          <h2 className="font-medium">Your semester by week</h2>
-          <CrunchStrip weeks={weeks} heavy={heavy} currentWeek={thisWeek} />
+          <h2 className="font-medium">Big weeks ahead</h2>
+          <BigWeeks weeks={bigWeeks(EVENTS, TZ)} tz={TZ} thisWeek={thisWeek} />
         </div>
       </section>
       <section id="calendar" className="flex flex-col gap-6">
