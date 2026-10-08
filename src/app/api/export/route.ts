@@ -21,11 +21,13 @@ const TABLES = {
 export async function GET() {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const out: Record<string, unknown> = { exported_at: new Date().toISOString() };
-  for (const [key, [table, columns]] of Object.entries(TABLES)) {
-    const { data } = await auth.supabase.from(table).select(columns);
-    out[key] = data ?? [];
-  }
+  const results = await Promise.all(
+    Object.entries(TABLES).map(async ([key, [table, columns]]) => {
+      const { data } = await auth.supabase.from(table).select(columns);
+      return [key, data ?? []] as const;
+    }),
+  );
+  const out = { exported_at: new Date().toISOString(), ...Object.fromEntries(results) };
   return new Response(JSON.stringify(out, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",

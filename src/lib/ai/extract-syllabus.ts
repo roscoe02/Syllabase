@@ -1,7 +1,15 @@
 import "server-only";
+import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { anthropic, MODELS } from "./client";
-import { ParsedSyllabus } from "./syllabus-schema";
+import { dropInvalidDates, ParsedSyllabus } from "./syllabus-schema";
+
+/** Extraction failed after Claude ran, so the tokens were still billed. */
+export class ExtractionError extends Error {
+  constructor(message: string, readonly usage: Anthropic.Usage) {
+    super(message);
+  }
+}
 
 const SYSTEM = `You extract structured data from college course syllabi.
 Rules:
@@ -42,7 +50,7 @@ export async function extractSyllabusFromPdf(pdfBase64: string, opts?: { termSta
   });
 
   if (response.stop_reason === "refusal" || !response.parsed_output) {
-    throw new Error(`Syllabus extraction failed (stop_reason=${response.stop_reason})`);
+    throw new ExtractionError(`Syllabus extraction failed (stop_reason=${response.stop_reason})`, response.usage);
   }
-  return { syllabus: response.parsed_output, usage: response.usage };
+  return { syllabus: dropInvalidDates(response.parsed_output), usage: response.usage };
 }

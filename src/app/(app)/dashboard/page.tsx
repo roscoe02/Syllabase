@@ -57,7 +57,10 @@ async function Dashboard() {
     return loads.find((l) => l.weekStart === key) ?? { weekStart: key, totalWeight: 0, unweightedCount: 0, eventCount: 0 };
   });
   const heavy = new Set(crunchWeeks(weeks).map((w) => w.weekStart));
-  const needsInfo = courses.filter((c) => (status.get(c.id)?.missing.length ?? 0) > 0 || status.get(c.id)?.freshness !== "current");
+  const needsInfo = courses.filter((c) => {
+    const s = status.get(c.id);
+    return s && (s.missing.length > 0 || s.freshness !== "current");
+  });
 
   return (
     <>

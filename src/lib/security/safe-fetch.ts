@@ -1,31 +1,19 @@
 import "server-only";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { isPrivateIp } from "./ip";
 
 /**
  * Fetch a URL a user gave us (calendar feeds) without letting them point our server at
  * internal addresses (SSRF): https only, every hop's host must resolve to a public IP,
  * at most 3 redirects, a timeout, and a response size cap.
+ *
+ * Known limit: fetch() resolves the host again after our check, so a DNS-rebinding host could still
+ * swap in a private IP between the two lookups. Pin the checked IP with an undici dispatcher if this
+ * ever fetches anything more sensitive than calendar feeds.
  */
 
 const MAX_REDIRECTS = 3;
-
-function isPrivateIp(ip: string): boolean {
-  if (ip.includes(":")) {
-    const v6 = ip.toLowerCase();
-    if (v6.startsWith("::ffff:")) return isPrivateIp(v6.slice(7));
-    return v6 === "::1" || v6 === "::" || v6.startsWith("fc") || v6.startsWith("fd") || v6.startsWith("fe80");
-  }
-  const [a, b] = ip.split(".").map(Number);
-  return (
-    a === 0 || a === 10 || a === 127 ||
-    (a === 100 && b >= 64 && b <= 127) || // carrier-grade NAT
-    (a === 169 && b === 254) || // link-local, cloud metadata
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    a >= 224 // multicast and reserved
-  );
-}
 
 async function assertPublicHttps(url: URL) {
   if (url.protocol !== "https:") throw new UnsafeUrlError("Only https:// links are allowed");

@@ -75,3 +75,24 @@ export const ParsedSyllabus = z.object({
 });
 
 export type ParsedSyllabus = z.infer<typeof ParsedSyllabus>;
+
+const isIsoDate = (d: string) => {
+  const t = /^\d{4}-\d{2}-\d{2}$/.test(d) ? Date.parse(`${d}T00:00:00Z`) : NaN;
+  return !Number.isNaN(t) && new Date(t).toISOString().startsWith(d);
+};
+const isHhMm = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+
+/**
+ * Dates and times arrive as free strings (from the model or the review form). Anything that isn't a
+ * real YYYY-MM-DD / HH:MM becomes null, so it shows as missing instead of breaking the calendar.
+ */
+export function dropInvalidDates(s: ParsedSyllabus): ParsedSyllabus {
+  return {
+    ...s,
+    graded_items: s.graded_items.map((i) => ({
+      ...i,
+      due_date: i.due_date && isIsoDate(i.due_date) ? i.due_date : null,
+      due_time: i.due_time && isHhMm(i.due_time) ? i.due_time : null,
+    })),
+  };
+}

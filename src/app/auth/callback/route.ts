@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeNextPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -9,8 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const nextParam = url.searchParams.get("next") ?? "/dashboard";
-  const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/dashboard";
+  const next = safeNextPath(url.searchParams.get("next"), url.origin);
 
   if (code) {
     const supabase = await createClient();

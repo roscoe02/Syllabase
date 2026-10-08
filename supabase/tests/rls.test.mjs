@@ -49,7 +49,8 @@ const before = (await db.query(`select ics_export_token t from public.profiles w
 const regen = await as(A, `select public.regenerate_ics_token() t`);
 check("A can regenerate export token", regen.ok && regen.rows[0].t !== before && /^[0-9a-f]{48}$/.test(regen.rows[0].t));
 check("A cannot insert another profile", !(await as(A, `insert into public.profiles (id) values ('${B}')`)).ok);
-check("A can save a feed", (await as(A, `insert into public.calendar_feeds (user_id, url_encrypted) values ('${A}', 'enc')`)).ok);
+check("A can save a feed", (await as(A, `insert into public.calendar_feeds (user_id, url_encrypted, url_hash) values ('${A}', 'enc', 'h1')`)).ok);
+check("the same feed can't be saved twice", !(await as(A, `insert into public.calendar_feeds (user_id, url_encrypted, url_hash) values ('${A}', 'enc2', 'h1')`)).ok);
 check("A can list feeds without the URL", (await as(A, `select id, provider from public.calendar_feeds`)).rows.length === 1);
 check("A cannot read the encrypted URL back", !(await as(A, `select url_encrypted from public.calendar_feeds`)).ok);
 check("B cannot see A's feed", (await as(B, `select id from public.calendar_feeds`)).rows.length === 0);
@@ -86,7 +87,8 @@ check("save creates course, syllabus, weights and events together",
 const resaved = await as(A, saveArgs(null, newCourse));
 check("re-saving replaces syllabus events instead of duplicating",
   resaved.ok && (await as(A, `select count(*)::int n from public.events where course_id = '${newCourse}'`)).rows[0].n === 1);
-check("B cannot save over A's course", !(await as(B, saveArgs(null, newCourse))).ok);
+check("a second course can have the same item on the same date", (await as(A, saveArgs(null))).ok);
+check("B cannot save over A's course",!(await as(B, saveArgs(null, newCourse))).ok);
 check("B's attempt left A's course untouched", (await db.query(`select user_id from public.courses where id = '${newCourse}'`)).rows[0].user_id === A);
 check("B cannot attach A's document", (await as(B, saveArgs(docA))).ok === false
   || (await db.query(`select user_id from public.documents where id = '${docA}'`)).rows[0].user_id === A);

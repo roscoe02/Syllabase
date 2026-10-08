@@ -24,6 +24,15 @@ export function SyllabusReview({
   const set = <K extends keyof ParsedSyllabus>(key: K, v: ParsedSyllabus[K]) => onChange({ ...value, [key]: v });
   const setComponent = (i: number, patch: Partial<Component>) =>
     set("grading", value.grading.map((c, j) => (j === i ? { ...c, ...patch } : c)));
+  // Items point at their category by name, so a rename has to carry them along.
+  const renameComponent = (i: number, name: string) => {
+    const old = value.grading[i].name;
+    onChange({
+      ...value,
+      grading: value.grading.map((c, j) => (j === i ? { ...c, name } : c)),
+      graded_items: value.graded_items.map((it) => (it.component === old ? { ...it, component: name } : it)),
+    });
+  };
   const setItem = (i: number, patch: Partial<Item>) =>
     set("graded_items", value.graded_items.map((it, j) => (j === i ? { ...it, ...patch } : it)));
 
@@ -80,7 +89,7 @@ export function SyllabusReview({
           {value.grading.map((c, i) => (
             <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 py-3 sm:grid-cols-[1fr_6rem_6rem_auto]">
               <div className="col-span-3 sm:col-span-1">
-                <Field label="Category" value={c.name} onChange={(v) => setComponent(i, { name: v ?? "" })} />
+                <Field label="Category" value={c.name} onChange={(v) => renameComponent(i, v ?? "")} />
               </div>
               <NumberField label="Weight %" value={c.weight_percent} onChange={(v) => setComponent(i, { weight_percent: v })} />
               <NumberField label="Drop lowest" value={c.drop_lowest} onChange={(v) => setComponent(i, { drop_lowest: v == null ? null : Math.round(v) })} />

@@ -58,6 +58,14 @@ export async function POST(request: Request) {
     messages: body.data.messages,
   });
 
+  // Count billed tokens exactly once, whether the reply finishes, fails or the client hangs up.
+  let recorded = false;
+  const record = async (usage: Anthropic.Usage | undefined) => {
+    if (recorded || !usage) return;
+    recorded = true;
+    await recordUsage(userId, usage);
+  };
+
   const encoder = new TextEncoder();
   const readable = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -67,10 +75,10 @@ export async function POST(request: Request) {
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
-        const final = await stream.finalMessage();
-        await recordUsage(userId, final.usage);
+        await record((await stream.finalMessage()).usage);
         controller.close();
       } catch (err) {
+        await record(stream.currentMessage?.usage);
         console.error("chat stream failed", err instanceof Error ? err.name : err);
         controller.enqueue(encoder.encode("\n\n[Something went wrong. Please try again.]"));
         controller.close();
@@ -80,7 +88,7 @@ export async function POST(request: Request) {
       // Client disconnected: still count what was already billed, so aborting can't dodge the quota.
       const partial = stream.currentMessage;
       stream.abort();
-      if (partial) await recordUsage(userId, partial.usage);
+      await record(partial?.usage);
     },
   });
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { extractSyllabusFromPdf } from "@/lib/ai/extract-syllabus";
+import { ExtractionError, extractSyllabusFromPdf } from "@/lib/ai/extract-syllabus";
 import { checkQuota, recordUsage } from "@/lib/ai/quota";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     const freshness = term ? checkFreshness(syllabus, term) : null;
     return Response.json({ syllabus, freshness });
   } catch (err) {
+    if (err instanceof ExtractionError) await recordUsage(userId, err.usage);
     return serverError("syllabus/parse extract", err, "We couldn't read that syllabus. Try another file.");
   }
 }
