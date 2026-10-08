@@ -4,7 +4,7 @@ Upload your syllabi and get one calendar with every deadline and grade weight, a
 and study tools (cheat sheets, quizzes, flashcards, semester planner) that run on your own notes.
 Sync your Canvas or Blackboard calendar feed. Built for UT Dallas first, usable by anyone.
 
-**Live demo:** [syllabase-vert.vercel.app](https://syllabase-vert.vercel.app). Click "Try it as a guest" to explore sample courses, no sign-up needed.
+**Live demo:** [syllabase-app.vercel.app](https://syllabase-app.vercel.app). Click "Try it as a guest" to explore sample courses, no sign-up needed.
 
 ## Getting started
 ```bash
