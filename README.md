@@ -1,5 +1,7 @@
 # Syllabase
 
+[![CI](https://github.com/roscoe02/Syllabase/actions/workflows/ci.yml/badge.svg)](https://github.com/roscoe02/Syllabase/actions/workflows/ci.yml)
+
 Upload your syllabi and get one calendar with every deadline and grade weight, a chatbot that knows your classes,
 and study tools (cheat sheets, quizzes, flashcards, semester planner) that run on your own notes.
 Sync your Canvas or Blackboard calendar feed. Built for UT Dallas first, usable by anyone.
