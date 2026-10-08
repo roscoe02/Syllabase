@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,6 +32,7 @@ function useTurnstile(container: React.RefObject<HTMLDivElement | null>) {
 }
 
 export function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const captchaRef = useRef<HTMLDivElement>(null);
@@ -66,9 +68,26 @@ export function LoginForm() {
     );
   }
 
+  /** A temporary account with no email, so anyone can try the app in one click. */
+  async function guest() {
+    setStatus({ kind: "sending" });
+    const { error } = await createClient().auth.signInAnonymously({
+      options: { captchaToken: captchaToken ?? undefined },
+    });
+    if (error) {
+      setStatus({ kind: "error", message: "Couldn't start a guest session. Please try again." });
+      return;
+    }
+    router.push("/dashboard");
+    router.refresh(); // drop anything cached while signed out
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
+        <button type="button" onClick={guest} disabled={status.kind === "sending"} className="btn-primary">
+          Try it as a guest
+        </button>
         <button type="button" onClick={() => oauth("google")} className="btn-secondary">
           Continue with Google
         </button>

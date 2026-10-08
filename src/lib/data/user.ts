@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -8,6 +9,8 @@ import { createClient } from "@/lib/supabase/server";
  * Redirects to /login when there's no valid session.
  */
 export async function getCurrentUser() {
+  // Signed-in content is per request: keep it (and the clock reads after it) out of prerendered shells.
+  await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;

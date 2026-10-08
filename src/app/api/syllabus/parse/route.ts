@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { syllabus, usage } = await extractSyllabusFromPdf(bytes.toString("base64"), { termStart: firstDay });
+    const { syllabus, usage } = await extractSyllabusFromPdf(bytes.toString("base64"), { termName: term?.name, termStart: firstDay });
     await recordUsage(userId, usage);
     const freshness = term ? checkFreshness(syllabus, term) : null;
     return Response.json({ syllabus, freshness });
