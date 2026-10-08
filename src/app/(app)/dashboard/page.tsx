@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { Suspense } from "react";
 import { Agenda } from "@/components/agenda";
 import { BigWeeks } from "@/components/big-weeks";
 import { bigWeeks } from "@/lib/calendar/big-weeks";
+import { syncStaleFeeds } from "@/lib/calendar/sync-feed";
 import { getProfile, listCourses, listEvents, listSyllabusStatus } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { courseLabel } from "@/lib/format";
 import { addDaysKey, dateKey, mondayOfKey } from "@/lib/time";
 
@@ -22,7 +25,9 @@ export default function DashboardPage() {
 }
 
 async function Dashboard() {
-  const { supabase } = await getCurrentUser();
+  const { supabase, id } = await getCurrentUser();
+  // Canvas items show up on the next visit without slowing this one down.
+  after(() => syncStaleFeeds(createAdminClient(), id));
   const { timezone: tz } = await getProfile(supabase);
   const now = new Date();
   const today = dateKey(now, tz);

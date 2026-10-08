@@ -99,4 +99,20 @@ check("B cannot attach A's document", (await as(B, saveArgs(docA))).ok === false
   || (await db.query(`select user_id from public.documents where id = '${docA}'`)).rows[0].user_id === A);
 check("signed-out users cannot save", !(await as("", saveArgs(null))).ok);
 
+// Calendar feeds: items belong to their owner's feed; duplicates of syllabus items are linked server-side.
+const feedA = (await db.query(`insert into public.calendar_feeds (user_id, url_encrypted, url_hash) values ('${A}', 'enc', 'feedA') returning id`)).rows[0].id;
+check("B cannot attach an event to A's feed", !(await as(B, `insert into public.events (user_id, source, source_uid, title, starts_at, feed_id) values ('${B}', 'ics', 'x', 'x', now(), '${feedA}')`)).ok);
+check("users cannot call link_feed_duplicates", !(await as(A, `select public.link_feed_duplicates('${A}', '${feedA}', '[]')`)).ok);
+const midterm = (await db.query(`select id from public.events where course_id = '${newCourse}' and source = 'syllabus' limit 1`)).rows[0].id;
+await db.query(`insert into public.events (user_id, course_id, source, source_uid, title, starts_at, feed_id) values ('${A}', '${newCourse}', 'ics', 'event-assignment-1', 'Midterm', now(), '${feedA}')`);
+await db.query(`select public.link_feed_duplicates('${A}', '${feedA}', '[{"source_uid":"event-assignment-1","syllabus_event_id":"${midterm}"}]')`);
+check("a feed item hides the syllabus item it covers", (await db.query(`select replaced_by from public.events where id = '${midterm}'`)).rows[0].replaced_by !== null);
+await db.query(`select public.link_feed_duplicates('${A}', '${feedA}', '[]')`);
+check("re-linking clears links the feed no longer makes", (await db.query(`select replaced_by from public.events where id = '${midterm}'`)).rows[0].replaced_by === null);
+await db.query(`select public.link_feed_duplicates('${A}', '${feedA}', '[{"source_uid":"event-assignment-1","syllabus_event_id":"${midterm}"}]')`);
+await db.query(`delete from public.calendar_feeds where id = '${feedA}'`);
+check("disconnecting a feed removes its items and un-hides syllabus items",
+  (await db.query(`select (select count(*) from public.events where feed_id is not null)::int n, (select replaced_by from public.events where id = '${midterm}') r`)).rows[0].n === 0
+  && (await db.query(`select replaced_by from public.events where id = '${midterm}'`)).rows[0].replaced_by === null);
+
 if (failed) { console.error(`${failed} check(s) failed`); process.exit(1); }

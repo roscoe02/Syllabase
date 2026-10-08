@@ -28,6 +28,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/calendar/[to
     .from("events")
     .select("id, title, description, url, starts_at, ends_at, all_day, courses(code)")
     .eq("user_id", profile.id)
+    .is("replaced_by", null)
     .gte("starts_at", new Date(Date.now() - 1000 * 60 * 60 * 24 * 60).toISOString());
 
   const body = buildIcs(

@@ -1,6 +1,7 @@
 import "server-only";
 import ical, { type VEvent, type ParameterValue } from "node-ical";
 import { safeFetchText } from "@/lib/security/safe-fetch";
+import { stripCoursePrefix } from "./match";
 
 /**
  * Import a Canvas / Blackboard / D2L / Moodle / Google calendar feed.
@@ -25,6 +26,8 @@ export interface ImportedEvent {
   startsAt: Date;
   endsAt: Date | null;
   allDay: boolean;
+  /** For all-day items, the calendar date (YYYY-MM-DD) as the feed wrote it. */
+  date: string | null;
   /** Guessed from the UID/title; the user can correct it. */
   kind: "homework" | "exam" | "quiz" | "other";
 }
@@ -41,10 +44,17 @@ function guessKind(uid: string, title: string): ImportedEvent["kind"] {
   return "other";
 }
 
+const localDateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 export async function fetchFeed(feedUrl: string): Promise<ImportedEvent[]> {
   const url = feedUrl.replace(/^webcal:\/\//i, "https://");
   // https only, public hosts only, 5 MB cap: the URL is user-supplied (see safe-fetch.ts).
-  const body = await safeFetchText(url, { maxBytes: 5 * 1024 * 1024, timeoutMs: 15_000 });
+  return parseFeed(await safeFetchText(url, { maxBytes: 5 * 1024 * 1024, timeoutMs: 15_000 }));
+}
+
+/** Calendar items from the text of an .ics file. */
+export function parseFeed(body: string): ImportedEvent[] {
   const parsed = ical.sync.parseICS(body);
 
   const events: ImportedEvent[] = [];
@@ -53,15 +63,18 @@ export async function fetchFeed(feedUrl: string): Promise<ImportedEvent[]> {
     const ev = item as VEvent;
     const rawTitle = text(ev.summary) ?? "(untitled)";
     const match = rawTitle.match(COURSE_SUFFIX);
+    const allDay = ev.datetype === "date";
     events.push({
       sourceUid: ev.uid,
-      title: match ? rawTitle.replace(COURSE_SUFFIX, "") : rawTitle,
+      title: stripCoursePrefix(match ? rawTitle.replace(COURSE_SUFFIX, "") : rawTitle),
       courseCode: match?.[1] ?? null,
       description: text(ev.description),
       url: typeof ev.url === "string" ? ev.url : null,
       startsAt: ev.start,
       endsAt: ev.end ?? null,
-      allDay: ev.datetype === "date",
+      allDay,
+      // node-ical builds date-only values at local midnight of the server's zone; read them back the same way.
+      date: allDay ? localDateKey(ev.start) : null,
       kind: guessKind(ev.uid, rawTitle),
     });
     // TODO: expand RRULE recurrences (node-ical exposes ev.rrule) for non-LMS feeds.
