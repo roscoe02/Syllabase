@@ -8,6 +8,7 @@ const PAGE_SIZE = 1000;
 /**
  * GET /api/cron/cleanup-guests — daily Vercel Cron (vercel.json). Deletes guest accounts older than
  * 7 days, with their files. Vercel sends `Authorization: Bearer $CRON_SECRET`; anything else gets a 401.
+ * The daily database read also keeps the free Supabase project from pausing after 7 idle days.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -16,6 +17,8 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient();
+  const { error: pingError } = await admin.from("profiles").select("id").limit(1);
+  if (pingError) return serverError("cron/cleanup-guests ping", pingError);
   const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
   // Collect first, then delete, so deletions don't shift the pages being read.
   const expired: string[] = [];
