@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { MODELS } from "@/lib/ai/client";
-import { ParsedSyllabus } from "@/lib/ai/syllabus-schema";
+import { dropInvalidDates, ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 import { checkFreshness } from "@/lib/syllabus/staleness";
 import { syllabusToEvents } from "@/lib/syllabus/to-events";
@@ -29,7 +29,8 @@ export async function POST(request: Request) {
 
   const body = await parseBody(request, Body, 300 * 1024);
   if ("error" in body) return body.error;
-  const { documentId, courseId, source, term, syllabus } = body.data;
+  const { documentId, courseId, source, term } = body.data;
+  const syllabus = dropInvalidDates(body.data.syllabus);
 
   const { data: profile } = await supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle();
   const tz = profile?.timezone ?? "America/Chicago";

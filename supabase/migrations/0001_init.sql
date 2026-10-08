@@ -115,10 +115,12 @@ create table public.calendar_feeds (
   user_id          uuid not null references auth.users (id) on delete cascade,
   provider         text not null default 'canvas' check (provider in ('canvas', 'blackboard', 'd2l', 'moodle', 'google', 'outlook', 'other')),
   url_encrypted    text not null,   -- AES-256-GCM via src/lib/security/crypto.ts; never readable by the browser
+  url_hash         text not null,   -- keyed HMAC of the URL (hashSecret), so the same feed is saved once
   label            text,
   last_synced_at   timestamptz,
   last_error       text,
-  created_at       timestamptz not null default now()
+  created_at       timestamptz not null default now(),
+  unique (user_id, url_hash)
 );
 
 -- Scores the student enters for the grade calculator ("what do I need on the final?").
@@ -356,7 +358,8 @@ begin
   on conflict (course_id, component) do nothing;
 
   insert into public.events (user_id, course_id, source, source_uid, kind, title, description, starts_at, all_day, weight_percent)
-  select v_user, v_course, 'syllabus', e->>'source_uid', (e->>'kind')::public.event_kind, e->>'title', e->>'description',
+  -- Prefix with the course: two courses can each have "Quiz 1" on the same date.
+  select v_user, v_course, 'syllabus', v_course || ':' || (e->>'source_uid'), (e->>'kind')::public.event_kind, e->>'title', e->>'description',
          (e->>'starts_at')::timestamptz, (e->>'all_day')::boolean, (e->>'weight_percent')::numeric
   from jsonb_array_elements(p_events) e;
 

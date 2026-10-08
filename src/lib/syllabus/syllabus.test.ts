@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ParsedSyllabus } from "@/lib/ai/syllabus-schema";
+import { dropInvalidDates, type ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 import { checkFreshness } from "./staleness";
 import { termWindow, upcomingTerms } from "./terms";
 import { syllabusToEvents } from "./to-events";
@@ -60,5 +60,20 @@ describe("terms", () => {
   it("flags last semester's syllabus as outdated", () => {
     expect(checkFreshness({ ...base, term: "Spring 2026" }, termWindow("Fall", 2026)).status).toBe("outdated");
     expect(checkFreshness(base, termWindow("Fall", 2026)).status).toBe("current");
+  });
+});
+
+describe("dropInvalidDates", () => {
+  it("turns unreadable dates and times into missing values instead of crashing", () => {
+    const messy = dropInvalidDates({
+      ...base,
+      graded_items: [
+        { ...base.graded_items[0], due_date: "TBD", due_time: "11:59 PM" },
+        { ...base.graded_items[0], due_date: "2026-02-31", due_time: "23:59" },
+        { ...base.graded_items[0], due_date: "2026-10-14", due_time: "23:59" },
+      ],
+    });
+    expect(messy.graded_items.map((i) => [i.due_date, i.due_time])).toEqual([[null, null], [null, "23:59"], ["2026-10-14", "23:59"]]);
+    expect(() => syllabusToEvents(messy, "America/Chicago")).not.toThrow();
   });
 });

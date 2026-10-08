@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
 
 /**
  * AES-256-GCM for secrets we must store but never show again (LMS calendar feed URLs).
@@ -18,6 +18,11 @@ export function encryptSecret(plaintext: string): string {
   const cipher = createCipheriv("aes-256-gcm", key(), iv);
   const data = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   return [iv, cipher.getAuthTag(), data].map((b) => b.toString("base64")).join(".");
+}
+
+/** Keyed hash of a secret, for spotting duplicates without storing it in the clear. */
+export function hashSecret(value: string): string {
+  return createHmac("sha256", key()).update(value).digest("hex");
 }
 
 export function decryptSecret(payload: string): string {

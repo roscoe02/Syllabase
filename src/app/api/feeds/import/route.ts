@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fetchFeed } from "@/lib/calendar/import-ics";
-import { encryptSecret } from "@/lib/security/crypto";
+import { encryptSecret, hashSecret } from "@/lib/security/crypto";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 import { UnsafeUrlError } from "@/lib/security/safe-fetch";
@@ -42,13 +42,18 @@ export async function POST(request: Request) {
     return Response.json({ error: message }, { status: 400 });
   }
 
-  const { error: feedError } = await supabase.from("calendar_feeds").insert({
-    user_id: userId,
-    url_encrypted: encryptSecret(url),
-    provider,
-    label,
-    last_synced_at: new Date().toISOString(),
-  });
+  // Saving the same link again (webcal:// or https://) keeps the existing feed.
+  const { error: feedError } = await supabase.from("calendar_feeds").upsert(
+    {
+      user_id: userId,
+      url_encrypted: encryptSecret(url),
+      url_hash: hashSecret(url.replace(/^webcal:\/\//i, "https://")),
+      provider,
+      label,
+      last_synced_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,url_hash", ignoreDuplicates: true },
+  );
   if (feedError) return serverError("feeds/import insert feed", feedError);
 
   const { error } = await supabase.from("events").upsert(
