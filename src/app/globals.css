@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/* Design tokens: paper, ink, one highlighter accent. */
+:root {
+  --paper: #faf8f3;
+  --ink: #1c1b19;
+  --ink-muted: #4a4741; /* 8.7:1 on paper */
+  --rule: #ddd8cc;
+  --highlight: #f5d547; /* background only, never text; ink on it: 11.9:1 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #17171a;
+    --ink: #ece8df;
+    --ink-muted: #b8b3a8; /* 8.6:1 on dark paper */
+    --rule: #34333a;
+    --highlight: #544608; /* ink on it: 7.6:1 */
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-highlight: var(--highlight);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Shared controls. Flat, ruled, one radius. */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 font-medium text-paper disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-ink px-4 py-2 font-medium disabled:opacity-60;
+  }
+  .btn-quiet {
+    @apply inline-flex items-center rounded-md px-2 py-1 text-ink-muted underline underline-offset-2;
+  }
+  .input {
+    @apply w-full rounded-md border border-rule bg-paper px-3 py-2 text-ink;
+  }
+  .input:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 0;
+  }
+  .skeleton {
+    @apply rounded-sm bg-rule;
+  }
+  .label {
+    @apply text-sm font-medium;
+  }
+  .num {
+    @apply font-mono tabular-nums;
+  }
+}
