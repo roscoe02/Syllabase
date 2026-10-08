@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GuestButton } from "@/components/guest-button";
 
 // Placeholder landing page. The real one shows a sample syllabus turning into a calendar.
 const FEATURES = [
@@ -16,8 +17,10 @@ export default function Home() {
         <p className="text-lg text-ink-muted">
           Your syllabi, deadlines and course materials in one place, with a study assistant that knows your classes.
         </p>
-        <div>
-          <Link href="/login" className="inline-block rounded-md bg-ink px-5 py-2 font-medium text-paper">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Known limit: no CAPTCHA token here. If Turnstile is turned on in Supabase, guests must start from /login. */}
+          <GuestButton />
+          <Link href="/login" className="btn-secondary">
             Sign in
           </Link>
         </div>

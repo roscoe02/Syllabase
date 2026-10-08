@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { GuestButton } from "@/components/guest-button";
 import { createClient } from "@/lib/supabase/client";
 
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent"; email: string } | { kind: "error"; message: string };
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+/** OAuth providers turned on in Supabase, e.g. "google,azure". Unset: guest and email link only. */
+const PROVIDERS = (process.env.NEXT_PUBLIC_AUTH_PROVIDERS ?? "").split(",");
 
 declare global {
   interface Window {
@@ -32,7 +34,6 @@ function useTurnstile(container: React.RefObject<HTMLDivElement | null>) {
 }
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const captchaRef = useRef<HTMLDivElement>(null);
@@ -68,32 +69,20 @@ export function LoginForm() {
     );
   }
 
-  /** A temporary account with no email, so anyone can try the app in one click. */
-  async function guest() {
-    setStatus({ kind: "sending" });
-    const { error } = await createClient().auth.signInAnonymously({
-      options: { captchaToken: captchaToken ?? undefined },
-    });
-    if (error) {
-      setStatus({ kind: "error", message: "Couldn't start a guest session. Please try again." });
-      return;
-    }
-    router.push("/dashboard");
-    router.refresh(); // drop anything cached while signed out
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <button type="button" onClick={guest} disabled={status.kind === "sending"} className="btn-primary">
-          Try it as a guest
-        </button>
-        <button type="button" onClick={() => oauth("google")} className="btn-secondary">
-          Continue with Google
-        </button>
-        <button type="button" onClick={() => oauth("azure")} className="btn-secondary">
-          Continue with Microsoft
-        </button>
+        <GuestButton captchaToken={captchaToken} />
+        {PROVIDERS.includes("google") && (
+          <button type="button" onClick={() => oauth("google")} className="btn-secondary">
+            Continue with Google
+          </button>
+        )}
+        {PROVIDERS.includes("azure") && (
+          <button type="button" onClick={() => oauth("azure")} className="btn-secondary">
+            Continue with Microsoft
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-3 text-sm text-ink-muted">
@@ -121,7 +110,7 @@ export function LoginForm() {
             className="input"
           />
           {TURNSTILE_SITE_KEY && <div ref={captchaRef} />}
-          <button type="submit" disabled={status.kind === "sending"} className="btn-primary">
+          <button type="submit" disabled={status.kind === "sending"} className="btn-secondary">
             {status.kind === "sending" ? "Sending link" : "Email me a sign-in link"}
           </button>
         </form>

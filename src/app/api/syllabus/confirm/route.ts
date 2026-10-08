@@ -2,14 +2,12 @@ import { z } from "zod";
 import { MODELS } from "@/lib/ai/client";
 import { dropInvalidDates, ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
-import { checkFreshness } from "@/lib/syllabus/staleness";
-import { syllabusToEvents } from "@/lib/syllabus/to-events";
+import { saveSyllabus } from "@/lib/syllabus/save";
 
 /**
  * POST /api/syllabus/confirm  { documentId, courseId?, term, syllabus }
- * Saves the syllabus the student reviewed and edited: course, syllabus record, grade weights and
- * calendar events, in one transaction (public.save_syllabus, which runs under the caller's RLS).
- * Freshness is recomputed here; the client's verdict is never trusted.
+ * Saves the syllabus the student reviewed and edited (see saveSyllabus). Freshness is recomputed
+ * on the server; the client's verdict is never trusted.
  */
 
 const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -35,32 +33,16 @@ export async function POST(request: Request) {
   const { data: profile } = await supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle();
   const tz = profile?.timezone ?? "America/Chicago";
 
-  const freshness = checkFreshness(syllabus, term);
-  const events = syllabusToEvents(syllabus, tz);
-  const weights = syllabus.grading
-    .filter((g) => g.weight_percent != null)
-    .map((g) => ({ component: g.name, weight_percent: g.weight_percent, drop_lowest: g.drop_lowest ?? 0 }));
-
-  const { data, error } = await supabase.rpc("save_syllabus", {
-    p_document_id: documentId,
-    p_course: {
-      code: syllabus.course_code,
-      section: syllabus.section,
-      title: syllabus.course_title,
-      term: term.name,
-      instructor_name: syllabus.instructor.name,
-      instructor_email: syllabus.instructor.email,
-    },
-    p_parsed: syllabus,
-    p_model: MODELS.default,
-    p_source: source,
-    p_freshness: freshness.status,
-    p_freshness_reason: "reason" in freshness ? freshness.reason : null,
-    p_weights: weights,
-    p_events: events,
-    p_course_id: courseId ?? null,
+  const { courseId: savedId, events, error } = await saveSyllabus(supabase, {
+    syllabus,
+    term,
+    tz,
+    model: MODELS.default,
+    documentId,
+    courseId,
+    source,
   });
-  if (error || !data) return serverError("syllabus/confirm save", error, "Couldn't save the course. Please try again.");
+  if (error || !savedId) return serverError("syllabus/confirm save", error, "Couldn't save the course. Please try again.");
 
-  return Response.json({ courseId: data as string, events: events.length });
+  return Response.json({ courseId: savedId, events });
 }

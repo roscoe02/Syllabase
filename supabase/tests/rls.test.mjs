@@ -2,7 +2,7 @@
 // auth/storage, then tries to read and write across two users. Run: npm run test:db
 import { PGlite } from "@electric-sql/pglite";
 import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 const db = new PGlite({ extensions: { pgcrypto } });
 const A = "11111111-1111-1111-1111-111111111111", B = "22222222-2222-2222-2222-222222222222";
@@ -23,8 +23,11 @@ await db.exec(`
   grant usage on schema storage to authenticated; grant all on storage.objects to authenticated;
   create function storage.foldername(name text) returns text[] language sql as $$ select string_to_array(name, '/') $$;
 `);
-await db.exec(readFileSync(new URL("../migrations/0001_init.sql", import.meta.url), "utf8"));
-console.log("migration applied");
+const migrations = new URL("../migrations/", import.meta.url);
+for (const file of readdirSync(migrations).filter((f) => f.endsWith(".sql")).sort()) {
+  await db.exec(readFileSync(new URL(file, migrations), "utf8"));
+}
+console.log("migrations applied");
 
 await db.exec(`insert into auth.users (id, email) values ('${A}', 'a@x.edu'), ('${B}', 'b@x.edu')`);
 const as = async (uid, sql) => {
@@ -54,6 +57,8 @@ check("the same feed can't be saved twice", !(await as(A, `insert into public.ca
 check("A can list feeds without the URL", (await as(A, `select id, provider from public.calendar_feeds`)).rows.length === 1);
 check("A cannot read the encrypted URL back", !(await as(A, `select url_encrypted from public.calendar_feeds`)).ok);
 check("B cannot see A's feed", (await as(B, `select id from public.calendar_feeds`)).rows.length === 0);
+check("users cannot read site-wide usage", !(await as(A, `select public.site_usage_today()`)).ok);
+check("users cannot call the signup trigger function", !(await as(A, `select public.handle_new_user()`)).ok);
 check("users cannot call record_usage", !(await as(A, `select public.record_usage('${A}', 1, 1, 0, 0)`)).ok);
 check("users cannot write usage directly", !(await as(A, `insert into public.usage_daily (user_id, weighted_tokens) values ('${A}', -999999)`)).ok);
 await db.query(`select public.record_usage('${A}', 1000, 100, 2000, 400)`);

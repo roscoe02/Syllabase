@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { deleteUserAndFiles } from "@/lib/supabase/delete-user";
 import { getCurrentUser } from "@/lib/data/user";
 
 /** New calendar link; the old one stops working right away. */
@@ -27,17 +27,7 @@ export async function updateTimezone(formData: FormData) {
 export async function deleteAccount(formData: FormData) {
   if (String(formData.get("confirm") ?? "").trim().toLowerCase() !== "delete") return;
   const { supabase, id } = await getCurrentUser();
-  const admin = createAdminClient();
-
-  const bucket = admin.storage.from("documents");
-  const { data: folders } = await bucket.list(id, { limit: 1000 });
-  for (const folder of folders ?? []) {
-    const { data: files } = await bucket.list(`${id}/${folder.name}`, { limit: 1000 });
-    const paths = (files ?? []).map((f) => `${id}/${folder.name}/${f.name}`);
-    if (paths.length) await bucket.remove(paths);
-  }
-
-  const { error } = await admin.auth.admin.deleteUser(id);
+  const error = await deleteUserAndFiles(id);
   if (error) {
     console.error("deleteAccount failed", { code: error.code });
     return;
