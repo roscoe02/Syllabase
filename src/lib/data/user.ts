@@ -15,5 +15,5 @@ export async function getCurrentUser() {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (!claims?.sub) redirect("/login");
-  return { supabase, id: claims.sub, email: (claims.email as string | undefined) ?? null };
+  return { supabase, id: claims.sub, email: (claims.email as string | undefined) || null }; // guests have email ""
 }

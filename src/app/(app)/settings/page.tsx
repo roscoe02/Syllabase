@@ -69,7 +69,9 @@ async function Settings() {
 
       <section aria-labelledby="data-h" className="flex flex-col gap-3">
         <h2 id="data-h" className="font-medium">Your data</h2>
-        <p className="text-ink-muted">Signed in as {email ?? "your account"}.</p>
+        <p className="text-ink-muted">
+          {email ? `Signed in as ${email}.` : "Signed in as a guest. Guest accounts and their data are deleted after 7 days."}
+        </p>
         <div>
           <a href="/api/export" className="btn-secondary">Download my data</a>
         </div>
