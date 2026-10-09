@@ -13,8 +13,9 @@
   color-scheme: light; /* native controls (date/time pickers, selects) match the theme */
 }
 
+/* Dark follows the device unless the student picked a theme (data-theme on <html>, set by the theme toggle). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #111114;
     --surface: #18181c;
     --ink: #f4f4f5;
@@ -25,6 +26,18 @@
     --accent-soft: #1b2238;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --paper: #111114;
+  --surface: #18181c;
+  --ink: #f4f4f5;
+  --ink-muted: #a1a1aa; /* 7.8:1 on paper */
+  --rule: #2a2a30;
+  --accent: #8da2f5; /* 7.3:1 on paper */
+  --accent-ink: #111114;
+  --accent-soft: #1b2238;
+  color-scheme: dark;
 }
 
 @theme inline {
