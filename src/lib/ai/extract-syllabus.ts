@@ -1,7 +1,6 @@
 import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic, MODELS } from "./client";
+import { anthropic, lenientFormat, MODELS } from "./client";
 import { dropInvalidDates, ExtractedSyllabus, fromExtracted } from "./syllabus-schema";
 
 /** Extraction failed after Claude ran, so the tokens were still billed. */
@@ -55,7 +54,7 @@ export async function extractSyllabusFromPdf(pdfBase64: string, opts?: { termNam
         ],
       },
     ],
-    output_config: { format: zodOutputFormat(ExtractedSyllabus) },
+    output_config: { format: lenientFormat(ExtractedSyllabus) },
   });
 
   if (response.stop_reason === "refusal" || !response.parsed_output) {

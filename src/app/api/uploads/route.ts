@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { rateLimit } from "@/lib/security/rate-limit";
-import { MATERIAL_TYPES } from "@/lib/files";
+import { MATERIAL_TYPES, maxBytesFor } from "@/lib/files";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 
 /**
@@ -19,7 +19,9 @@ const Body = z.object({
   mimeType: z.enum(MATERIAL_TYPES),
   kind: z.enum(["syllabus", "notes", "slides", "assignment", "rubric", "past_exam", "other"]),
   courseId: z.uuid().optional(),
-}).refine((b) => b.kind !== "syllabus" || b.mimeType === "application/pdf", "Syllabi must be PDFs");
+})
+  .refine((b) => b.kind !== "syllabus" || b.mimeType === "application/pdf", "Syllabi must be PDFs")
+  .refine((b) => b.size <= maxBytesFor(b.mimeType), "Too large");
 
 export async function POST(request: Request) {
   const auth = await requireUser();

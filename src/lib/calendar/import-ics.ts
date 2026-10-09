@@ -61,6 +61,8 @@ export function parseFeed(body: string): ImportedEvent[] {
   for (const item of Object.values(parsed)) {
     if (!item || item.type !== "VEVENT") continue;
     const ev = item as VEvent;
+    // Without an id or a start there's nothing to place on the calendar or to update later.
+    if (!ev.uid || !(ev.start instanceof Date) || Number.isNaN(ev.start.getTime())) continue;
     const rawTitle = text(ev.summary) ?? "(untitled)";
     const match = rawTitle.match(COURSE_SUFFIX);
     const allDay = ev.datetype === "date";

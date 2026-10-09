@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { materialType } from "@/lib/files";
+import { materialType, maxBytesFor } from "@/lib/files";
 import { createClient } from "@/lib/supabase/client";
 
 const KINDS = [
@@ -13,7 +13,6 @@ const KINDS = [
   ["rubric", "Rubric"],
   ["other", "Other"],
 ] as const;
-const MAX_BYTES = 20 * 1024 * 1024;
 
 /** Upload a study file to this course: straight to Storage with a signed URL, like syllabi. */
 export function MaterialsUpload({ courseId }: { courseId: string }) {
@@ -24,7 +23,9 @@ export function MaterialsUpload({ courseId }: { courseId: string }) {
   async function upload(file: File) {
     const mimeType = materialType(file);
     if (!mimeType) return setState({ busy: false, message: "Use a PDF, text or Markdown file, or a photo (PNG, JPEG, WebP)." });
-    if (file.size > MAX_BYTES) return setState({ busy: false, message: "That file is over 20 MB." });
+    if (file.size > maxBytesFor(mimeType)) {
+      return setState({ busy: false, message: mimeType.startsWith("image/") ? "Photos must be under 5 MB." : "That file is over 20 MB." });
+    }
     setState({ busy: true, message: "Uploading" });
     const res = await fetch("/api/uploads", {
       method: "POST",

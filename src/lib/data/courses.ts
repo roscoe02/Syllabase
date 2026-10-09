@@ -4,25 +4,28 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * Deletes one course, or every course when `courseId` is omitted, with its uploaded files. Events, syllabi
  * and grades cascade in the database; Storage files don't, so they go first. A removed course that came from
- * a calendar feed is remembered on the feed, so the next sync doesn't bring it back; removing every course
- * disconnects the feeds too. Runs with the user-scoped client, so RLS limits it to the student's own data.
+ * a calendar feed is remembered on the profile, so no sync brings it back; removing every course disconnects
+ * the feeds too. Runs with the user-scoped client, so RLS limits it to the student's own data.
  * Returns the first error, if any.
  */
 export async function deleteCourses(supabase: SupabaseClient, userId: string, courseId?: string) {
   if (courseId) {
-    const { data: course } = await supabase.from("courses").select("canvas_key").eq("id", courseId).maybeSingle();
-    if (course?.canvas_key) {
-      const { data: feeds } = await supabase.from("calendar_feeds").select("id, hidden_course_keys").eq("user_id", userId);
-      for (const f of feeds ?? []) {
-        const keys: string[] = f.hidden_course_keys ?? [];
-        if (keys.includes(course.canvas_key)) continue;
-        const { error } = await supabase.from("calendar_feeds").update({ hidden_course_keys: [...keys, course.canvas_key] }).eq("id", f.id);
-        if (error) return error;
-      }
+    // A removed course that came from a calendar feed stays removed on the next sync.
+    const [{ data: course }, { data: profile }] = await Promise.all([
+      supabase.from("courses").select("canvas_key").eq("id", courseId).maybeSingle(),
+      supabase.from("profiles").select("hidden_course_keys").eq("id", userId).maybeSingle(),
+    ]);
+    const keys: string[] = profile?.hidden_course_keys ?? [];
+    if (course?.canvas_key && !keys.includes(course.canvas_key)) {
+      const { error } = await supabase.from("profiles").update({ hidden_course_keys: [...keys, course.canvas_key] }).eq("id", userId);
+      if (error) return error;
     }
   } else {
+    // A fresh start: disconnect feeds and forget removed courses, so reconnecting brings everything back.
     const { error } = await supabase.from("calendar_feeds").delete().eq("user_id", userId);
     if (error) return error;
+    const { error: resetError } = await supabase.from("profiles").update({ hidden_course_keys: [] }).eq("id", userId);
+    if (resetError) return resetError;
   }
 
   let docsQuery = supabase.from("documents").select("storage_path").eq("user_id", userId);

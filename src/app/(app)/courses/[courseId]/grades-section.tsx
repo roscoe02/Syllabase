@@ -101,10 +101,15 @@ export function GradesSection({
         </div>
       )}
 
-      {unweighted.map((name) => (
+      {unweighted.map((name) => {
+        const pending = entries.filter((e) => e.component === name).length;
+        return (
         <form key={name} action={setWeightGuess.bind(null, courseId, name)} className="flex flex-wrap items-end gap-3 text-sm">
           <label className="flex flex-col gap-1">
-            <span className="text-ink-muted">The syllabus doesn&apos;t give a weight for {name}. Your best guess:</span>
+            <span className="text-ink-muted">
+              The syllabus doesn&apos;t give a weight for {name}.
+              {pending > 0 && ` Your ${pending} ${name} score${pending === 1 ? "" : "s"} won't count until you enter one.`} Your best guess:
+            </span>
             <span className="flex items-center gap-2">
               <input name="weight" type="number" min={0} max={100} step="any" required className="input num w-24" aria-label={`Weight guess for ${name}, in percent`} />
               <span>%</span>
@@ -112,7 +117,8 @@ export function GradesSection({
           </label>
           <button type="submit" className="btn-secondary">Save guess</button>
         </form>
-      ))}
+        );
+      })}
 
       {categories.length > 0 ? (
         <form action={addGradeEntry.bind(null, courseId)} className="flex flex-wrap items-end gap-3 border-t border-rule pt-4">
