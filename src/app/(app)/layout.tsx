@@ -4,6 +4,7 @@ import { signOut } from "./actions";
 const NAV = [
   ["/dashboard", "Dashboard"],
   ["/calendar", "Calendar"],
+  ["/chat", "Chat"],
   ["/courses/new", "Add a course"],
   ["/settings", "Settings"],
 ] as const;
