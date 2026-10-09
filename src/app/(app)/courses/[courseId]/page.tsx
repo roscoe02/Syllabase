@@ -140,6 +140,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
       )}
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule pt-6 text-sm">
+        <Link href={`/chat?course=${course.id}`} className="btn-secondary">Ask about this course</Link>
         <Link href="/courses/new" className="text-ink-muted underline underline-offset-2">Add another course</Link>
         <form action={deleteCourse.bind(null, course.id)}>
           <ConfirmSubmit
