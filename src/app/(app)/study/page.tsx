@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { listCourses } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
@@ -12,7 +13,7 @@ const FOCUS_HINTS: Partial<Record<string, string>> = {
   topic: "A topic or chapters, e.g. chapters 3 and 4",
 };
 
-/** One-shot tools only; the conversational ones will live in chat. */
+/** One-shot tools only; the conversational ones are study modes in chat. */
 const TOOLS: Tool[] = PRESETS.filter((p) => p.mode === "one-shot" && p.output !== "plan" && p.id !== "essay-feedback").map((p) => ({
   id: p.id,
   title: p.title,
@@ -27,6 +28,10 @@ export default function StudyPage({ searchParams }: PageProps<"/study">) {
       <header className="no-print flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Study tools</h1>
         <p className="text-ink-muted">Turn your notes, slides and past exams into cheat sheets, flashcards and practice quizzes.</p>
+        <p className="text-sm text-ink-muted">
+          For back-and-forth practice like a Feynman check or a finals study coach, use the{" "}
+          <Link href="/chat?mode=feynman-check" className="underline underline-offset-2">study modes in chat</Link>.
+        </p>
       </header>
       <Suspense fallback={<div className="skeleton h-96 w-full" aria-busy="true" aria-label="Loading study tools" />}>
         <Study searchParams={searchParams} />
