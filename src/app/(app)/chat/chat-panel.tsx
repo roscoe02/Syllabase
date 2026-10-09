@@ -1,10 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Markdown } from "@/components/markdown";
+import { CALENDAR_MODE, describeWhen, type Change } from "@/lib/calendar/quick-add";
 
-type Message = { role: "user" | "assistant"; content: string };
+/** Quick-add replies carry proposed calendar changes that the student saves or discards. */
+type Message = { role: "user" | "assistant"; content: string; changes?: Change[]; status?: "pending" | "saving" | "saved" | "discarded" };
+
+const VERB = { add: "Add", move: "Move", remove: "Remove" } as const;
 type Course = { id: string; label: string };
 export type Mode = { id: string; title: string; blurb: string; hint: string; usesFiles: boolean };
 
@@ -54,6 +59,7 @@ export function ChatPanel({
     setError(null);
     setDraft("");
     setMessages((m) => [...m, { role: "user", content: text }, { role: "assistant", content: "" }]);
+    if (modeId === CALENDAR_MODE) return quickAdd(text);
 
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -82,6 +88,46 @@ export function ChatPanel({
     const newThread = res.headers.get("X-Thread-Id");
     if (!threadId && newThread) router.replace(`/chat?thread=${newThread}`, { scroll: false });
     else router.refresh();
+  }
+
+  function fail(text: string, message: string) {
+    setMessages((m) => m.slice(0, -2));
+    setDraft(text);
+    setError(message);
+    setBusy(false);
+  }
+
+  async function quickAdd(text: string) {
+    const history = messages.slice(-10).map(({ role, content }) => ({ role, content }));
+    const res = await fetch("/api/quick-add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, history, courseId }),
+    }).catch(() => null);
+    const json = await res?.json().catch(() => null);
+    if (!res?.ok || !json) return fail(text, json?.error ?? "Something went wrong. Please try again.");
+    const changes: Change[] = json.changes ?? [];
+    setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: json.reply, changes, status: changes.length ? "pending" : undefined }]);
+    setBusy(false);
+  }
+
+  const setStatus = (i: number, status: Message["status"]) => setMessages((m) => m.map((x, j) => (j === i ? { ...x, status } : x)));
+
+  async function save(i: number) {
+    setStatus(i, "saving");
+    setError(null);
+    const res = await fetch("/api/quick-add/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ changes: messages[i].changes }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setStatus(i, "pending");
+      setError("Couldn't save those changes. Please try again.");
+      return;
+    }
+    setStatus(i, "saved");
+    router.refresh();
   }
 
   return (
@@ -151,6 +197,41 @@ export function ChatPanel({
             <div key={i} className={m.role === "user" ? "self-end max-w-[85%] rounded-md bg-rule/60 px-3 py-2" : "max-w-[85%]"}>
               <span className="sr-only">{m.role === "user" ? "You:" : "Syllabase:"}</span>
               {m.role === "assistant" && m.content ? <Markdown>{m.content}</Markdown> : <p className="whitespace-pre-wrap">{m.content || (busy ? "Thinking…" : "")}</p>}
+              {m.changes && m.changes.length > 0 && (
+                <div className="mt-3 flex flex-col gap-3 rounded-md border border-rule p-3">
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {m.changes.map((c, j) => (
+                      <li key={j}>
+                        <span className="font-medium">{VERB[c.action]}</span>{" "}
+                        {c.courseLabel && <span className="num">{c.courseLabel} </span>}
+                        {c.title}
+                        {c.date && (
+                          <>
+                            {c.action === "move" ? " to " : ", "}
+                            <span className="num">{describeWhen(c.date, c.time)}</span>
+                          </>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {m.status === "saved" ? (
+                    <p className="text-sm">
+                      Saved. <Link href="/calendar" className="underline underline-offset-2">See your calendar</Link>
+                    </p>
+                  ) : m.status === "discarded" ? (
+                    <p className="text-sm text-ink-muted">Not saved.</p>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <button type="button" className="btn-primary" disabled={m.status === "saving"} onClick={() => save(i)}>
+                        {m.status === "saving" ? "Saving" : "Save to calendar"}
+                      </button>
+                      <button type="button" className="btn-quiet" disabled={m.status === "saving"} onClick={() => setStatus(i, "discarded")}>
+                        Discard
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}

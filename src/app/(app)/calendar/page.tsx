@@ -47,6 +47,7 @@ async function Calendar({ searchParams }: { searchParams: PageProps<"/calendar">
           <Link href="/calendar" className="btn-quiet">Today</Link>
           <Link href={`/calendar?month=${shiftMonth(month, 1)}`} className="btn-secondary px-3 py-1">Next</Link>
         </nav>
+        <Link href="/chat?mode=calendar" className="btn-quiet px-0">Tell Syllabase what changed</Link>
         <Link href="/settings#canvas" className="btn-quiet px-0">Import from Canvas</Link>
         <Link href="/settings#calendar-export" className="btn-quiet px-0">Add to Google or Apple Calendar</Link>
       </header>

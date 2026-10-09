@@ -18,6 +18,8 @@ sample courses, no sign-up needed.
   syllabus item (same course, number and similar name) replace it instead of showing up twice.
 - **Chat that knows your classes.** Ask "when is my next exam and how much is it worth?" and get an answer from your
   syllabi and calendar. Study modes turn the chat into a Feynman check, a finals coach, lecture recovery and more.
+- **Quick add.** Tell the chat what changed ("Midterm 2 moved to Nov 19", "quiz every Friday at 10 starting Oct 16")
+  and it proposes calendar changes. Nothing is saved until you confirm.
 - **Study tools.** Cheat sheets, flashcards, practice quizzes, concept maps and an exam predictor built from the notes,
   slides and past exams you upload.
 - **Grade calculator.** Enter scores as you get them back and see your current grade and what you need on the rest of the

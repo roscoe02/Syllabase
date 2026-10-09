@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/data/user";
 import { courseLabel } from "@/lib/format";
 import { getStudyMode, PRESETS, usesFiles } from "@/lib/study/presets";
 import { deleteThread } from "./actions";
+import { CALENDAR_MODE } from "@/lib/calendar/quick-add";
 import { ChatPanel, type Mode } from "./chat-panel";
 
 export const metadata = { title: "Chat · Syllabase" };
@@ -22,13 +23,22 @@ const MODE_HINTS: Record<string, string> = {
   "error-finder": "Paste the problem and your work.",
 };
 
-const MODES: Mode[] = PRESETS.filter((p) => p.mode === "interactive").map((p) => ({
-  id: p.id,
-  title: p.title,
-  blurb: p.blurb,
-  hint: MODE_HINTS[p.id] ?? "",
-  usesFiles: usesFiles(p),
-}));
+const MODES: Mode[] = [
+  {
+    id: CALENDAR_MODE,
+    title: "Update my calendar",
+    blurb: "Tell Syllabase what changed and it suggests calendar changes for you to save.",
+    hint: "For example: Midterm 2 moved to Nov 19, or quiz every Friday at 10 starting Oct 16.",
+    usesFiles: false,
+  },
+  ...PRESETS.filter((p) => p.mode === "interactive").map((p) => ({
+    id: p.id,
+    title: p.title,
+    blurb: p.blurb,
+    hint: MODE_HINTS[p.id] ?? "",
+    usesFiles: usesFiles(p),
+  })),
+];
 
 export default function ChatPage({ searchParams }: PageProps<"/chat">) {
   return (
