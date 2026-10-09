@@ -23,7 +23,7 @@ function subscribe(onChange: () => void) {
   };
 }
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
+export function ThemeToggle({ className = "", icon = false }: { className?: string; icon?: boolean }) {
   // null on the server: the label appears once the browser knows the theme.
   const dark = useSyncExternalStore(subscribe, isDark, () => null);
 
@@ -38,9 +38,16 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     window.dispatchEvent(new Event("themechange"));
   }
 
+  const label = dark ? "Light mode" : "Dark mode";
   return (
-    <button type="button" onClick={toggle} className={`${className} ${dark === null ? "invisible" : ""}`}>
-      {dark ? "Light mode" : "Dark mode"}
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={icon ? `Switch to ${label.toLowerCase()}` : undefined}
+      title={icon ? label : undefined}
+      className={`${className} ${dark === null ? "invisible" : ""}`}
+    >
+      {icon ? <span aria-hidden="true">◐</span> : label}
     </button>
   );
 }
