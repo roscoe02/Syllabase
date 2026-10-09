@@ -13,10 +13,9 @@ import { checkFreshness } from "@/lib/syllabus/staleness";
  * The browser uploads the PDF straight to Supabase Storage with a signed upload URL
  * (Vercel functions cap request bodies at ~4.5 MB), creates a `documents` row, then calls this.
  * Returns the parsed syllabus plus a freshness verdict for the selected term, for the student to
- * review/edit; nothing is written to the calendar until they confirm. Uploads are the primary path;
- * UTD CourseBook copies go through the same route and freshness check.
+ * review/edit; nothing is written to the calendar until they confirm.
  *
- * TODO: DOCX -> text via mammoth; images via vision; CourseBook fetch from Nebula syllabus_uri.
+ * TODO: DOCX -> text via mammoth; images via vision.
  */
 
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
