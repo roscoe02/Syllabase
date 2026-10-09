@@ -6,6 +6,7 @@ import { Markdown } from "@/components/markdown";
 
 type Message = { role: "user" | "assistant"; content: string };
 type Course = { id: string; label: string };
+export type Mode = { id: string; title: string; blurb: string; hint: string; usesFiles: boolean };
 
 const STARTERS = [
   "What's due this week?",
@@ -14,15 +15,19 @@ const STARTERS = [
   "What does the syllabus leave out?",
 ];
 
-/** The conversation: course picker, messages (streamed), and the question box. */
+/** The conversation: course and mode pickers, messages (streamed), and the question box. */
 export function ChatPanel({
   courses,
   courseId,
+  modes,
+  mode: modeId,
   threadId,
   initialMessages,
 }: {
   courses: Course[];
   courseId: string | null;
+  modes: Mode[];
+  mode: string | null;
   threadId: string | null;
   initialMessages: Message[];
 }) {
@@ -32,6 +37,11 @@ export function ChatPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const mode = modes.find((m) => m.id === modeId) ?? null;
+  const go = (course: string | null, m: string | null) => {
+    const params = new URLSearchParams({ ...(course ? { course } : {}), ...(m ? { mode: m } : {}) });
+    router.push(params.size ? `/chat?${params}` : "/chat");
+  };
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
@@ -48,7 +58,7 @@ export function ChatPanel({
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, ...(threadId ? { threadId } : { courseId }) }),
+      body: JSON.stringify({ message: text, ...(threadId ? { threadId } : { courseId, ...(modeId ? { mode: modeId } : {}) }) }),
     }).catch(() => null);
 
     if (!res?.ok || !res.body) {
@@ -76,23 +86,51 @@ export function ChatPanel({
 
   return (
     <div className="flex min-h-[28rem] flex-col gap-4">
-      <label className="flex flex-wrap items-center gap-3">
-        <span className="label">Ask about</span>
-        <select
-          className="input w-auto"
-          value={courseId ?? ""}
-          disabled={Boolean(threadId) || busy}
-          onChange={(e) => router.push(e.target.value ? `/chat?course=${e.target.value}` : "/chat")}
-        >
-          <option value="">All my courses</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.label}</option>
-          ))}
-        </select>
-      </label>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <label className="flex max-w-full flex-wrap items-center gap-3">
+          <span className="label">Course</span>
+          <select
+            className="input w-auto max-w-full"
+            value={courseId ?? ""}
+            disabled={Boolean(threadId) || busy}
+            onChange={(e) => go(e.target.value || null, modeId)}
+          >
+            <option value="">All my courses</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex max-w-full flex-wrap items-center gap-3">
+          <span className="label">Mode</span>
+          <select
+            className="input w-auto max-w-full"
+            value={modeId ?? ""}
+            disabled={Boolean(threadId) || busy}
+            onChange={(e) => go(courseId, e.target.value || null)}
+          >
+            <option value="">Ask about my courses</option>
+            {modes.map((m) => (
+              <option key={m.id} value={m.id}>{m.title}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div role="log" aria-live="polite" aria-busy={busy} className="flex flex-1 flex-col gap-4 border-y border-rule py-4">
-        {messages.length === 0 ? (
+        {messages.length === 0 && mode ? (
+          <div className="flex flex-col gap-2">
+            <p className="font-medium">{mode.title}</p>
+            <p className="text-ink-muted">{mode.blurb} {mode.hint}</p>
+            {mode.usesFiles && (
+              <p className="text-sm text-ink-muted">
+                {courseId
+                  ? "Your latest uploaded files for this course are included."
+                  : "Pick a course to include its uploaded notes, slides and past exams."}
+              </p>
+            )}
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex flex-col gap-3">
             <p className="text-ink-muted">
               Ask anything about your {courseId ? "course" : "courses"}: due dates, grade weights, policies. Answers come from your
@@ -139,12 +177,12 @@ export function ChatPanel({
               ask(draft);
             }
           }}
-          placeholder="Ask about deadlines, weights or policies"
+          placeholder={mode ? mode.hint : "Ask about deadlines, weights or policies"}
           className="input resize-y"
         />
         <div className="flex items-center gap-4">
           <button type="submit" className="btn-primary" disabled={busy || !draft.trim()}>
-            {busy ? "Answering" : "Ask"}
+            {busy ? "Answering" : mode ? "Send" : "Ask"}
           </button>
           <p aria-live="polite" className="text-sm text-ink-muted">{error}</p>
         </div>
