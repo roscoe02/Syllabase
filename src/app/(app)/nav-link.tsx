@@ -18,7 +18,7 @@ export function NavLinks({ items }: { items: readonly Item[] }) {
 function Marked({ items }: { items: readonly Item[] }) {
   const path = usePathname();
   return items.map(([href, label]) => (
-    <NavLink key={href} href={href} label={label} current={path === href || (href !== "/courses/new" && path.startsWith(`${href}/`))} />
+    <NavLink key={href} href={href} label={label} current={path === href || path.startsWith(`${href}/`)} />
   ));
 }
 

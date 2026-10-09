@@ -5,9 +5,9 @@ import { NavLinks } from "./nav-link";
 const NAV = [
   ["/dashboard", "Dashboard"],
   ["/calendar", "Calendar"],
+  ["/courses", "Courses"],
   ["/chat", "Chat"],
   ["/study", "Study"],
-  ["/courses/new", "Add a course"],
   ["/settings", "Settings"],
 ] as const;
 
@@ -16,7 +16,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-rule">
-        <nav aria-label="Main" className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <nav aria-label="Main" className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-sm sm:gap-x-6 sm:text-base">
           <Link href="/dashboard" className="mr-auto font-semibold">
             Syllabase
           </Link>
