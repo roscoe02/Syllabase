@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Change, MAX_CHANGES } from "@/lib/calendar/quick-add";
 import { getProfile } from "@/lib/data/queries";
+import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 import { zonedToUtc } from "@/lib/time";
 
@@ -17,6 +18,9 @@ export async function POST(request: Request) {
   if ("error" in auth) return auth.error;
   const { supabase, userId } = auth;
 
+  const limited = await rateLimit("calendar", userId);
+  if (limited) return limited;
+
   const body = await parseBody(request, Body);
   if ("error" in body) return body.error;
   const { timezone: tz } = await getProfile(supabase);
@@ -26,7 +30,19 @@ export async function POST(request: Request) {
   const adds = body.data.changes.filter((c) => c.action === "add" && c.date);
   const edits = body.data.changes.filter((c) => c.action !== "add" && c.eventId && (c.action === "remove" || c.date));
 
-  let saved = 0;
+  // Moves and removals first: repeating them is harmless, so a retry after a failure can't duplicate the adds.
+  const results = await Promise.all(
+    edits.map((c) =>
+      (c.action === "remove" ? supabase.from("events").delete() : supabase.from("events").update({ starts_at: startsAt(c), all_day: !c.time }))
+        .eq("id", c.eventId!)
+        .neq("source", "ics")
+        .select("id"),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed) return serverError("quick add edit", failed.error);
+  let saved = results.reduce((n, r) => n + (r.data?.length ?? 0), 0);
+
   if (adds.length) {
     const { error } = await supabase.from("events").insert(
       adds.map((c) => ({
@@ -42,15 +58,6 @@ export async function POST(request: Request) {
     );
     if (error) return serverError("quick add insert", error);
     saved += adds.length;
-  }
-  for (const c of edits) {
-    const query =
-      c.action === "remove"
-        ? supabase.from("events").delete()
-        : supabase.from("events").update({ starts_at: startsAt(c), all_day: !c.time });
-    const { data, error } = await query.eq("id", c.eventId!).neq("source", "ics").select("id");
-    if (error) return serverError("quick add edit", error);
-    saved += data?.length ?? 0;
   }
   return Response.json({ saved });
 }

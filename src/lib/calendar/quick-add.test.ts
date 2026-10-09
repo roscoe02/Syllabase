@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeWhen, resolveChanges, type QuickAddOutput } from "./quick-add";
+import { Change, describeWhen, resolveChanges, type QuickAddOutput } from "./quick-add";
 
 const C1 = "11111111-1111-4111-8111-111111111111";
 const E1 = "22222222-2222-4222-8222-222222222222";
@@ -33,6 +33,13 @@ describe("resolveChanges", () => {
     expect(res[0]).toMatchObject({ action: "add", courseId: C1, courseLabel: "CS 3345", time: "10:00", kind: "quiz" });
     expect(res[1]).toMatchObject({ action: "move", eventId: E1, title: "Midterm 2", date: "2026-11-19", time: null, kind: "exam" });
     expect(res[2]).toMatchObject({ courseId: null, time: null, weightPercent: null });
+  });
+
+  it("keeps long names within what the save step accepts", () => {
+    const long = "x".repeat(300);
+    const out: QuickAddOutput = { reply: "", changes: [change({ action: "move", event: "e1", date: "2026-11-19" })] };
+    const [c] = resolveChanges(out, [{ ref: "c1", id: C1, label: long }], [{ ...events[0], title: long }], null);
+    expect(Change.safeParse(c).success).toBe(true);
   });
 
   it("describes when an item happens", () => {

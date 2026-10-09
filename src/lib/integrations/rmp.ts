@@ -52,22 +52,18 @@ export async function lookupProfessor(fullName: string, schoolId = UTD_SCHOOL_ID
   if (process.env.RMP_ENABLED === "false") return null;
   const who = splitName(fullName);
   if (!who) return null;
-  let res: Response;
-  try {
-    res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Basic dGVzdDp0ZXN0",
-        Referer: "https://www.ratemyprofessors.com/",
-      },
-      body: JSON.stringify({ query: QUERY, variables: { text: `${who.first} ${who.last}`.trim(), schoolID: schoolId } }),
-    });
-  } catch {
-    return null; // RMP unreachable: the UI falls back to rmpSearchUrl()
-  }
-  if (!res.ok) return null;
-  const json = await res.json().catch(() => null);
+  // Network and HTTP errors throw, so they aren't cached; the caller shows the search link instead.
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Basic dGVzdDp0ZXN0",
+      Referer: "https://www.ratemyprofessors.com/",
+    },
+    body: JSON.stringify({ query: QUERY, variables: { text: `${who.first} ${who.last}`.trim(), schoolID: schoolId } }),
+  });
+  if (!res.ok) throw new Error(`RMP ${res.status}`);
+  const json = await res.json();
   const nodes: Node[] = json?.data?.newSearch?.teachers?.edges?.map((e: { node: Node }) => e.node) ?? [];
   const best = pickProfessor(nodes, fullName);
   if (!best) return null;

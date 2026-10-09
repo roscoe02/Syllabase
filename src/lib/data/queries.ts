@@ -106,8 +106,11 @@ export async function getCourse(supabase: SupabaseClient, id: string) {
   };
 }
 
-/** Each course's grade so far from the student's scores, or null when there are none yet. */
-export async function listCurrentGrades(supabase: SupabaseClient): Promise<Map<string, number | null>> {
+/**
+ * Each course's grade so far, for courses with at least one score. "unweighted" means the scores are all in
+ * categories without a weight yet, so there's nothing to average.
+ */
+export async function listCurrentGrades(supabase: SupabaseClient): Promise<Map<string, number | "unweighted">> {
   const [{ data: syllabi }, { data: weights }, { data: entries }] = await Promise.all([
     supabase.from("syllabi").select("course_id, parsed").order("created_at", { ascending: false }),
     supabase.from("grade_weights").select("course_id, component, weight_percent, is_guess, drop_lowest"),
@@ -115,14 +118,14 @@ export async function listCurrentGrades(supabase: SupabaseClient): Promise<Map<s
   ]);
   const parsed = new Map<string, ParsedSyllabus>();
   for (const s of syllabi ?? []) if (!parsed.has(s.course_id)) parsed.set(s.course_id, s.parsed as ParsedSyllabus);
-  const grades = new Map<string, number | null>();
+  const grades = new Map<string, number | "unweighted">();
   for (const id of new Set((entries ?? []).map((e) => e.course_id as string))) {
     const { components } = courseGradeInputs(
       parsed.get(id) ?? null,
       (weights ?? []).filter((w) => w.course_id === id),
       (entries ?? []).filter((e) => e.course_id === id),
     );
-    grades.set(id, summarize(components).currentPercent);
+    grades.set(id, summarize(components).currentPercent ?? "unweighted");
   }
   return grades;
 }
