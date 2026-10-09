@@ -22,12 +22,14 @@ const limiters = redis
       feed: new Ratelimit({ redis, prefix: "rl:feed", limiter: Ratelimit.slidingWindow(10, "10 m") }),
       /** New uploads (storage costs), per user. */
       upload: new Ratelimit({ redis, prefix: "rl:upload", limiter: Ratelimit.slidingWindow(20, "1 h") }),
+      /** Saving quick-add calendar changes (up to 40 rows each), per user. */
+      calendar: new Ratelimit({ redis, prefix: "rl:calendar", limiter: Ratelimit.slidingWindow(30, "10 m") }),
       /** Unauthenticated ICS export, keyed by IP. */
       export: new Ratelimit({ redis, prefix: "rl:export", limiter: Ratelimit.slidingWindow(60, "1 m") }),
     }
   : null;
 
-export type LimitKind = "ai" | "feed" | "upload" | "export";
+export type LimitKind = "ai" | "feed" | "upload" | "calendar" | "export";
 
 /** Returns a 429 Response when over the limit, otherwise null. */
 export async function rateLimit(kind: LimitKind, key: string): Promise<Response | null> {

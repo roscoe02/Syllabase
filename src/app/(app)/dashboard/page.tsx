@@ -58,7 +58,9 @@ async function Dashboard() {
   });
   const weeksAhead = bigWeeks(upcoming.filter((e) => dateKey(new Date(e.startsAt), tz) >= today), tz);
 
-  const soon = nextTwoWeeks.filter((e) => dateKey(new Date(e.startsAt), tz) <= addDaysKey(today, 3)).length;
+  const soonEnd = addDaysKey(today, 3);
+  const soon = nextTwoWeeks.filter((e) => dateKey(new Date(e.startsAt), tz) <= soonEnd).length;
+  const byDay = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "long" }).format(new Date(`${soonEnd}T12:00:00Z`));
   const nextExam = upcoming.find((e) => e.kind === "exam" && (e.allDay ? dateKey(new Date(e.startsAt), tz) >= today : e.startsAt >= now.toISOString()));
   const busiest = [...weeksAhead].sort((a, b) => b.totalWeight - a.totalWeight)[0];
   const biggest = busiest && [...busiest.weighted].sort((a, b) => (b.weightPercent ?? 0) - (a.weightPercent ?? 0))[0];
@@ -69,7 +71,7 @@ async function Dashboard() {
       <div className="flex flex-col gap-10">
         <header className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {soon === 0 ? "Nothing due in the next 3 days" : `${soon} ${soon === 1 ? "thing" : "things"} due in the next 3 days`}
+            {soon === 0 ? `Nothing due by ${byDay}` : `${soon} ${soon === 1 ? "thing" : "things"} due by ${byDay}`}
           </h1>
           <p className="text-ink-muted">
             {todayLong}.
@@ -121,7 +123,13 @@ async function Dashboard() {
                   <Link href={`/courses/${c.id}`} className="num text-sm underline-offset-2 hover:underline">
                     {courseLabel(c)}
                   </Link>
-                  {g == null ? <span className="text-sm text-ink-muted">No scores yet</span> : <span className="num">{Math.round(g * 10) / 10}%</span>}
+                  {g === undefined ? (
+                    <span className="text-sm text-ink-muted">No scores yet</span>
+                  ) : g === "unweighted" ? (
+                    <Link href={`/courses/${c.id}`} className="text-sm text-ink-muted underline underline-offset-2">Needs a weight</Link>
+                  ) : (
+                    <span className="num">{Math.round(g * 10) / 10}%</span>
+                  )}
                 </li>
               );
             })}

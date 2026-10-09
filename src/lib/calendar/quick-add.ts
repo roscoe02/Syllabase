@@ -62,7 +62,8 @@ const realDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T
 
 /** Claude's proposal -> changes the server will accept. Anything that doesn't check out is dropped. */
 export function resolveChanges(out: QuickAddOutput, courses: RefCourse[], events: RefEvent[], defaultCourseId: string | null): Change[] {
-  const label = (id: string | null) => courses.find((c) => c.id === id)?.label ?? null;
+  // Display-only fields are trimmed to the save schema's limits, so a long course name can't block saving.
+  const label = (id: string | null) => courses.find((c) => c.id === id)?.label.slice(0, 40) ?? null;
   const changes: Change[] = [];
   for (const c of out.changes.slice(0, MAX_CHANGES)) {
     const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(c.time) ? c.time : null;
@@ -84,7 +85,7 @@ export function resolveChanges(out: QuickAddOutput, courses: RefCourse[], events
       eventId: ev.id,
       courseId: ev.courseId,
       courseLabel: label(ev.courseId),
-      title: ev.title,
+      title: ev.title.slice(0, 200),
       date: c.action === "move" ? c.date : null,
       time: c.action === "move" ? time : null,
       kind: KINDS.includes(ev.kind as Change["kind"]) ? (ev.kind as Change["kind"]) : "other",

@@ -26,7 +26,11 @@ function Bar({ percent }: { percent: number }) {
 
 /** Past grades for this UT Dallas course and the professor's Rate My Professors summary. Nothing for other schools. */
 export async function UtdInsights({ subject, number, instructor }: { subject: string; number: string; instructor: string | null }) {
-  const [grades, rmp] = await Promise.all([courseGrades(subject, number, instructor), instructor ? lookupProfessor(instructor) : null]);
+  // Lookup failures aren't cached; until a retry succeeds, the section is hidden or falls back to the search link.
+  const [grades, rmp] = await Promise.all([
+    courseGrades(subject, number, instructor).catch(() => null),
+    instructor ? lookupProfessor(instructor).catch(() => null) : null,
+  ]);
   if (!grades) return null;
   const trends = `https://trends.utdnebula.com/dashboard?searchTerms=${encodeURIComponent(`${subject} ${number}`)}`;
 

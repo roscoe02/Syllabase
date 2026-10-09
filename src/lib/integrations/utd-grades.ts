@@ -8,7 +8,7 @@ import { byProfessor, parseGradeCsv, sumGrades, type Distribution } from "./utd-
  */
 
 const SOURCE = "https://raw.githubusercontent.com/acmutd/utd-grades/master/raw_data/enhanced_grades_enhanced_grades_";
-// ponytail: fixed to the latest four fall/spring terms in the repository; add newer terms as they are published.
+// The latest four fall/spring terms in the repository; add newer terms as they are published.
 const TERMS = [
   ["25f", "Fall 2025"],
   ["25s", "Spring 2025"],
@@ -24,13 +24,15 @@ export interface CourseGrades {
   professor: Distribution | null;
 }
 
+/** Throws when a file can't be fetched, so an outage isn't cached as "no data". */
 export async function courseGrades(subject: string, number: string, instructor: string | null): Promise<CourseGrades | null> {
   "use cache";
   cacheLife("weeks");
   const files = await Promise.all(
     TERMS.map(async ([file]) => {
-      const res = await fetch(`${SOURCE}${file}.csv`).catch(() => null);
-      return res?.ok ? parseGradeCsv(await res.text(), subject, number) : [];
+      const res = await fetch(`${SOURCE}${file}.csv`);
+      if (!res.ok) throw new Error(`utd-grades ${file}: ${res.status}`);
+      return parseGradeCsv(await res.text(), subject, number);
     }),
   );
   const rows = files.flat();
