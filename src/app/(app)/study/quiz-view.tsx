@@ -15,7 +15,7 @@ export function QuizView({ questions }: { questions: Quiz["questions"] }) {
     <div className="flex flex-col gap-6">
       {multipleChoice.length > 0 && (
         <p className="num text-sm text-ink-muted" aria-live="polite">
-          Multiple choice: {correct} of {checked.length} checked correct ({multipleChoice.length} total)
+          Multiple choice: {correct} right out of {checked.length} checked, {multipleChoice.length} in all
         </p>
       )}
       <ol className="flex flex-col gap-6">

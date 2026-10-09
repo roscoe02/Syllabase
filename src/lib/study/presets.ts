@@ -270,6 +270,9 @@ Don't re-explain the whole thing.`,
   },
 ];
 
+/** Tools that work from the student's files (notes, slides, past exams, a draft). */
+export const usesFiles = (p: StudyPreset) => p.inputs.some((i) => i === "materials" || i === "draft");
+
 export function getPreset(id: string): StudyPreset | undefined {
   return PRESETS.find((p) => p.id === id);
 }

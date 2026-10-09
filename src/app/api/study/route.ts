@@ -9,7 +9,7 @@ import { loadMaterialBlocks } from "@/lib/data/materials";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 import { Flashcards, Quiz } from "@/lib/study/outputs";
-import { BASE_RULES, getPreset } from "@/lib/study/presets";
+import { BASE_RULES, getPreset, usesFiles } from "@/lib/study/presets";
 
 /**
  * POST /api/study  { presetId, courseId?, documentIds, focus? }
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     loadCourseContext(supabase, courseId, { withSyllabusFile: false }),
     loadMaterialBlocks(supabase, documentIds),
   ]);
-  if (preset.inputs.includes("materials") && materials.length === 0 && !focus) {
+  if (usesFiles(preset) && materials.length === 0 && !focus) {
     return Response.json({ error: "Pick at least one file, or say what to focus on." }, { status: 400 });
   }
 

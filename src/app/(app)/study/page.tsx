@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { listCourses } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { courseLabel } from "@/lib/format";
-import { PRESETS } from "@/lib/study/presets";
+import { PRESETS, usesFiles } from "@/lib/study/presets";
 import { StudyPanel, type Tool } from "./study-panel";
 
 export const metadata = { title: "Study · Syllabase" };
@@ -17,7 +17,7 @@ const TOOLS: Tool[] = PRESETS.filter((p) => p.mode === "one-shot" && p.output !=
   id: p.id,
   title: p.title,
   blurb: p.blurb,
-  needsMaterials: p.inputs.includes("materials"),
+  needsMaterials: usesFiles(p),
   focusHint: FOCUS_HINTS[p.inputs.find((i) => FOCUS_HINTS[i]) ?? "topic"] ?? "",
 }));
 

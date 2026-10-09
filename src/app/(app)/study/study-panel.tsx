@@ -30,6 +30,12 @@ export function StudyPanel({ tools, courses, documents, initialCourse }: { tools
     setSelected(documents.filter((d) => d.courseId === id).slice(0, MAX_FILES).map((d) => d.id));
   }
 
+  // File-based tools need a course; switching to one from "All my courses" picks the first course.
+  function pickTool(t: Tool) {
+    setToolId(t.id);
+    if (t.needsMaterials && !courseId && courses[0]) pickCourse(courses[0].id);
+  }
+
   async function generate() {
     setBusy(true);
     setError(null);
@@ -71,7 +77,7 @@ export function StudyPanel({ tools, courses, documents, initialCourse }: { tools
             {tools.map((t) => (
               <label key={t.id} className={`flex cursor-pointer flex-col gap-1 rounded-md border p-3 ${t.id === toolId ? "border-ink" : "border-rule hover:border-ink-muted"}`}>
                 <span className="flex items-center gap-2">
-                  <input type="radio" name="tool" value={t.id} checked={t.id === toolId} onChange={() => setToolId(t.id)} />
+                  <input type="radio" name="tool" value={t.id} checked={t.id === toolId} onChange={() => pickTool(t)} />
                   <span className="font-medium">{t.title}</span>
                 </span>
                 <span className="text-sm text-ink-muted">{t.blurb}</span>
