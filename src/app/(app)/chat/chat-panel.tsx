@@ -208,7 +208,7 @@ export function ChatPanel({
                         {c.date && (
                           <>
                             {c.action === "move" ? " to " : ", "}
-                            <span className="num">{describeWhen(c.date, c.time)}</span>
+                            <span className="num whitespace-nowrap">{describeWhen(c.date, c.time)}</span>
                           </>
                         )}
                       </li>
