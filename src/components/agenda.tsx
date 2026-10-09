@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { CalendarEvent } from "@/lib/data/queries";
-import { courseLabel, formatKeyLong, formatTime, formatWeight } from "@/lib/format";
+import { courseLabel, formatKeyDay, formatTime, formatWeight } from "@/lib/format";
 import { dateKey } from "@/lib/time";
 
-/** Events grouped by day. Days within `soonDays` of today get the highlighter. */
+/** Upcoming items, one row each. Dates within `soonDays` of today are marked in the accent color. */
 export function Agenda({
   events,
   tz,
@@ -32,35 +32,32 @@ export function Agenda({
   const soonKey = soonLimit.toISOString().slice(0, 10);
 
   return (
-    <ol className="flex flex-col divide-y divide-rule border-y border-rule">
-      {[...days].map(([key, dayEvents]) => {
+    <ol className="border-t border-rule">
+      {[...days].flatMap(([key, dayEvents]) => {
         const soon = key >= today && key <= soonKey;
-        return (
-          <li key={key} className="grid gap-2 py-3 sm:grid-cols-[12rem_1fr] sm:gap-6">
-            <h3 className="text-sm font-medium">
-              <span className={soon ? "bg-highlight px-1" : ""}>{key === today ? "Today" : formatKeyLong(key)}</span>
+        const day = key === today ? "Today" : formatKeyDay(key);
+        return dayEvents.map((e) => (
+          <li
+            key={e.id}
+            className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-rule py-2.5 sm:grid sm:grid-cols-[6.5rem_4.5rem_5.5rem_minmax(0,1fr)_auto] sm:gap-x-4"
+          >
+            {/* Phones: the title leads its row; wider screens keep the columns aligned. */}
+            <span className={`order-first basis-full sm:order-none sm:col-start-4 sm:row-start-1 ${e.kind === "exam" ? "font-semibold" : ""}`}>{e.title}</span>
+            <span className={`num text-sm sm:col-start-1 sm:row-start-1 ${soon ? "font-medium text-accent" : ""}`}>
+              {day}
               {soon && key !== today && <span className="sr-only"> (due soon)</span>}
-            </h3>
-            <ul className="flex flex-col gap-2">
-              {dayEvents.map((e) => (
-                <li key={e.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="num w-20 shrink-0 whitespace-nowrap text-sm text-ink-muted">{e.allDay ? "All day" : formatTime(e.startsAt, tz)}</span>
-                  {e.course && linkCourses ? (
-                    <Link href={`/courses/${e.course.id}`} className="num text-sm underline-offset-2 hover:underline">
-                      {courseLabel(e.course)}
-                    </Link>
-                  ) : (
-                    <span className="num text-sm text-ink-muted">{courseLabel(e.course)}</span>
-                  )}
-                  <span>
-                    <span className={e.kind === "exam" ? "font-medium" : ""}>{e.title}</span>
-                    {formatWeight(e.weightPercent) && <span className="num ml-3 text-sm text-ink-muted">{formatWeight(e.weightPercent)}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            </span>
+            <span className="num whitespace-nowrap text-sm text-ink-muted sm:col-start-2 sm:row-start-1">{e.allDay ? "All day" : formatTime(e.startsAt, tz)}</span>
+            {e.course && linkCourses ? (
+              <Link href={`/courses/${e.course.id}`} className="num text-sm underline-offset-2 hover:underline sm:col-start-3 sm:row-start-1">
+                {courseLabel(e.course)}
+              </Link>
+            ) : (
+              <span className="num text-sm text-ink-muted sm:col-start-3 sm:row-start-1">{courseLabel(e.course)}</span>
+            )}
+            <span className="num text-sm text-ink-muted sm:col-start-5 sm:row-start-1">{formatWeight(e.weightPercent)}</span>
           </li>
-        );
+        ));
       })}
     </ol>
   );

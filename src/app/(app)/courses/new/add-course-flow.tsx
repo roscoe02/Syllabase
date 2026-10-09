@@ -139,7 +139,7 @@ export function AddCourseFlow({ terms }: { terms: TermWindow[] }) {
           accept="application/pdf,.pdf"
           required
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="input file:mr-3 file:rounded-sm file:border-0 file:bg-ink file:px-3 file:py-1 file:text-paper"
+          className="input file:mr-3 file:rounded-sm file:border-0 file:bg-accent file:px-3 file:py-1 file:text-accent-ink"
         />
       </label>
       <p className="-mt-3 text-sm text-ink-muted">

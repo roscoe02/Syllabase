@@ -19,7 +19,7 @@ export function BigWeeks({ weeks, tz, thisWeek }: { weeks: BigWeek<CalendarEvent
         <li key={w.weekStart} className="grid gap-2 py-3 sm:grid-cols-[12rem_1fr] sm:gap-6">
           <div className="flex flex-col">
             <h3 className="text-sm font-medium">
-              <span className={w.weekStart === thisWeek ? "bg-highlight px-1" : ""}>{label(w.weekStart)}</span>
+              <span className={w.weekStart === thisWeek ? "text-accent" : ""}>{label(w.weekStart)}</span>
             </h3>
             <p className="text-sm text-ink-muted">
               {w.weighted.length} graded {w.weighted.length === 1 ? "item" : "items"}
