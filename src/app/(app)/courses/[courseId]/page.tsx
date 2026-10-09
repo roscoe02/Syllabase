@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -10,6 +11,14 @@ import { deleteCourse, removeDocument } from "./actions";
 import { GradesSection } from "./grades-section";
 import { MaterialsUpload } from "./materials-upload";
 import { UtdInsights } from "./utd-insights";
+
+export async function generateMetadata({ params }: PageProps<"/courses/[courseId]">): Promise<Metadata> {
+  const { courseId } = await params;
+  if (!/^[0-9a-f-]{36}$/i.test(courseId)) return {};
+  const { supabase } = await getCurrentUser();
+  const { data } = await supabase.from("courses").select("code, title").eq("id", courseId).maybeSingle();
+  return data ? { title: `${courseLabel(data)} · Syllabase` } : {};
+}
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
