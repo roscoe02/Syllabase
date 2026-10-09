@@ -80,3 +80,24 @@ body {
     @apply font-mono tabular-nums;
   }
 }
+
+/* Model output rendered from Markdown (src/components/markdown.tsx). */
+.markdown { display: flex; flex-direction: column; gap: 0.75rem; overflow-wrap: anywhere; }
+.markdown h1, .markdown h2, .markdown h3 { font-weight: 600; margin-top: 0.5rem; }
+.markdown h1 { font-size: 1.25rem; }
+.markdown h2 { font-size: 1.125rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.25rem; }
+.markdown ul, .markdown ol { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.markdown ul { list-style: disc; }
+.markdown ol { list-style: decimal; }
+.markdown a { text-decoration: underline; text-underline-offset: 2px; }
+.markdown code { font-family: var(--font-plex-mono); font-size: 0.9em; }
+.markdown pre { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; padding: 0.5rem; }
+.markdown table { border-collapse: collapse; width: 100%; font-size: 0.875rem; display: block; overflow-x: auto; }
+.markdown th, .markdown td { border: 1px solid var(--rule); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; }
+.markdown th { font-weight: 500; }
+
+/* Printing a study sheet: just the content. */
+@media print {
+  header, footer, .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+}

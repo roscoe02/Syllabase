@@ -11,7 +11,11 @@ const DAY = 24 * 60 * 60 * 1000;
  * from two weeks back to five months ahead, plus the syllabus PDF itself for a single course. User-scoped
  * client, so RLS limits it to the student's own data.
  */
-export async function loadCourseContext(supabase: SupabaseClient, courseId: string | null) {
+export async function loadCourseContext(
+  supabase: SupabaseClient,
+  courseId: string | null,
+  { withSyllabusFile = true }: { withSyllabusFile?: boolean } = {},
+) {
   const { timezone: tz } = await getProfile(supabase);
   const now = new Date();
 
@@ -42,7 +46,7 @@ export async function loadCourseContext(supabase: SupabaseClient, courseId: stri
 
   // The file answers what the parsed data doesn't (office hours, topics). One course only, to bound the cost.
   let pdf: string | null = null;
-  if (courseId && documentId) {
+  if (withSyllabusFile && courseId && documentId) {
     const { data: doc } = await supabase.from("documents").select("storage_path, mime_type").eq("id", documentId).maybeSingle();
     if (doc?.mime_type === "application/pdf") {
       const { data: file } = await supabase.storage.from("documents").download(doc.storage_path);

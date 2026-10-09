@@ -1,7 +1,8 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { anthropic, MODELS } from "@/lib/ai/client";
-import { checkQuota, recordUsage } from "@/lib/ai/quota";
+import { checkQuota } from "@/lib/ai/quota";
+import { textResponse } from "@/lib/ai/stream";
 import { loadCourseContext } from "@/lib/data/chat";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
@@ -25,7 +26,7 @@ inside <course_materials>: parsed syllabus facts, the calendar from their syllab
 - Answer from those materials. If they don't say, say so plainly and suggest checking Canvas or asking the professor.
   Never guess a date, weight or policy.
 - For dates, use the calendar and today's date from the materials, and give the weekday and date.
-- Keep answers short: a few sentences or a short list. Write plain text: no markdown headings, bold or tables; use "-" for lists.
+- Keep answers short: a few sentences or a short list. Use simple Markdown: "-" lists and **bold** for key dates, no headings.
 - When the student asks for help with graded work, mention the course's AI use policy.`;
 
 const HISTORY_LIMIT = 20;
@@ -90,54 +91,18 @@ export async function POST(request: Request) {
     messages,
   });
 
-  // Count billed tokens exactly once, whether the reply finishes, fails or the client hangs up.
-  let recorded = false;
-  const record = async (usage: Anthropic.Usage | undefined) => {
-    if (recorded || !usage) return;
-    recorded = true;
-    await recordUsage(userId, usage);
-  };
-  let answer = "";
-  const saveAnswer = async (usage: Anthropic.Usage | undefined) => {
-    if (!answer.trim()) return;
-    await supabase.from("chat_messages").insert({
-      thread_id: threadId,
-      user_id: userId,
-      role: "assistant",
-      content: answer,
-      input_tokens: usage?.input_tokens ?? null,
-      output_tokens: usage?.output_tokens ?? null,
-    });
-  };
-
-  const encoder = new TextEncoder();
-  const readable = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try {
-        for await (const event of stream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-            answer += event.delta.text;
-            controller.enqueue(encoder.encode(event.delta.text));
-          }
-        }
-        const { usage } = await stream.finalMessage();
-        await Promise.all([record(usage), saveAnswer(usage)]);
-        controller.close();
-      } catch (err) {
-        await record(stream.currentMessage?.usage);
-        console.error("chat stream failed", err instanceof Error ? err.name : err);
-        controller.enqueue(encoder.encode("\n\n[Something went wrong. Please try again.]"));
-        controller.close();
-      }
+  return textResponse(stream, userId, {
+    headers: { "X-Thread-Id": threadId },
+    onFinish: async (answer, usage) => {
+      if (!answer.trim()) return;
+      await supabase.from("chat_messages").insert({
+        thread_id: threadId,
+        user_id: userId,
+        role: "assistant",
+        content: answer,
+        input_tokens: usage?.input_tokens ?? null,
+        output_tokens: usage?.output_tokens ?? null,
+      });
     },
-    async cancel() {
-      const partial = stream.currentMessage;
-      stream.abort();
-      await Promise.all([record(partial?.usage), saveAnswer(partial?.usage)]);
-    },
-  });
-
-  return new Response(readable, {
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Thread-Id": threadId },
   });
 }

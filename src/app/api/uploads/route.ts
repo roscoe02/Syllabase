@@ -1,23 +1,25 @@
 import { z } from "zod";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { MATERIAL_TYPES } from "@/lib/files";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
 
 /**
- * POST /api/uploads  { filename, size, mimeType, kind }
+ * POST /api/uploads  { filename, size, mimeType, kind, courseId? }
  * Creates the documents row and a one-time signed upload URL. The browser then uploads straight to
  * Supabase Storage (Vercel caps function bodies at ~4.5 MB). Storage itself enforces the 20 MB limit
  * and type allowlist; the parser re-checks the real bytes.
  */
 
 const MAX_BYTES = 20 * 1024 * 1024;
-const GUEST_MAX_UPLOADS = 2;
+const GUEST_MAX_UPLOADS = 5;
 
 const Body = z.object({
   filename: z.string().trim().min(1).max(200),
   size: z.number().int().positive().max(MAX_BYTES),
-  mimeType: z.enum(["application/pdf"]), // syllabi: PDF only for now
-  kind: z.enum(["syllabus"]),
-});
+  mimeType: z.enum(MATERIAL_TYPES),
+  kind: z.enum(["syllabus", "notes", "slides", "assignment", "rubric", "past_exam", "other"]),
+  courseId: z.uuid().optional(),
+}).refine((b) => b.kind !== "syllabus" || b.mimeType === "application/pdf", "Syllabi must be PDFs");
 
 export async function POST(request: Request) {
   const auth = await requireUser();
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
     const { count } = await supabase.from("documents").select("id", { count: "exact", head: true });
     if ((count ?? 0) >= GUEST_MAX_UPLOADS) {
       return Response.json(
-        { error: `Guest accounts can add ${GUEST_MAX_UPLOADS} syllabi. Sign in with email to add more.` },
+        { error: `Guest accounts can upload ${GUEST_MAX_UPLOADS} files. Sign in with email to add more.` },
         { status: 403 },
       );
     }
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
 
   const body = await parseBody(request, Body);
   if ("error" in body) return body.error;
-  const { filename, size, mimeType, kind } = body.data;
+  const { filename, size, mimeType, kind, courseId } = body.data;
 
   const id = crypto.randomUUID();
   // Keep names boring: no path tricks, no odd characters in storage keys.
@@ -54,6 +56,7 @@ export async function POST(request: Request) {
     mime_type: mimeType,
     size_bytes: size,
     storage_path: path,
+    course_id: courseId ?? null, // RLS (owns_course) rejects someone else's course
   });
   if (rowError) return serverError("uploads insert", rowError);
 
