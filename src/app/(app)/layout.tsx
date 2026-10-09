@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "./actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { NavLinks } from "./nav-link";
 
 const NAV = [
@@ -21,6 +22,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
             Syllabase
           </Link>
           <NavLinks items={NAV} />
+          <ThemeToggle className="text-ink-muted hover:text-ink" />
           <form action={signOut}>
             <button type="submit" className="text-ink-muted hover:text-ink">
               Sign out
