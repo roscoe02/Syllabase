@@ -36,9 +36,9 @@ sample courses, no sign-up needed.
 | --- | --- |
 | ![A sample syllabus next to the calendar Syllabase builds from it](.github/screenshots/landing.png) | ![Dashboard on a phone in dark mode](.github/screenshots/phone-dashboard-dark.png) |
 
-| Study mode in chat |
-| --- |
-| ![Feynman check pointing out mistakes in a student's explanation](.github/screenshots/chat-feynman.png) |
+| Quick add | Study mode in chat |
+| --- | --- |
+| ![Quick add proposing a moved midterm and four weekly quizzes, waiting for the student to save](.github/screenshots/quick-add.png) | ![Feynman check pointing out mistakes in a student's explanation](.github/screenshots/chat-feynman.png) |
 
 ## How it works
 
