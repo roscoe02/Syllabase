@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "./actions";
+import { NavLinks } from "./nav-link";
 
 const NAV = [
   ["/dashboard", "Dashboard"],
@@ -19,11 +20,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           <Link href="/dashboard" className="mr-auto font-semibold">
             Syllabase
           </Link>
-          {NAV.map(([href, label]) => (
-            <Link key={href} href={href} className="text-ink-muted hover:text-ink">
-              {label}
-            </Link>
-          ))}
+          <NavLinks items={NAV} />
           <form action={signOut}>
             <button type="submit" className="text-ink-muted hover:text-ink">
               Sign out

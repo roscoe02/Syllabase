@@ -10,12 +10,15 @@ export function Agenda({
   today,
   soonDays = 3,
   empty,
+  linkCourses = true,
 }: {
   events: CalendarEvent[];
   tz: string;
   today: string;
   soonDays?: number;
   empty: React.ReactNode;
+  /** Off for sample data, whose courses have no page. */
+  linkCourses?: boolean;
 }) {
   if (events.length === 0) return <>{empty}</>;
 
@@ -42,15 +45,17 @@ export function Agenda({
               {dayEvents.map((e) => (
                 <li key={e.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="num w-20 shrink-0 whitespace-nowrap text-sm text-ink-muted">{e.allDay ? "All day" : formatTime(e.startsAt, tz)}</span>
-                  {e.course ? (
+                  {e.course && linkCourses ? (
                     <Link href={`/courses/${e.course.id}`} className="num text-sm underline-offset-2 hover:underline">
                       {courseLabel(e.course)}
                     </Link>
                   ) : (
-                    <span className="num text-sm text-ink-muted">Other</span>
+                    <span className="num text-sm text-ink-muted">{courseLabel(e.course)}</span>
                   )}
-                  <span className={e.kind === "exam" ? "font-medium" : ""}>{e.title}</span>
-                  {formatWeight(e.weightPercent) && <span className="num text-sm text-ink-muted">{formatWeight(e.weightPercent)}</span>}
+                  <span>
+                    <span className={e.kind === "exam" ? "font-medium" : ""}>{e.title}</span>
+                    {formatWeight(e.weightPercent) && <span className="num ml-3 text-sm text-ink-muted">{formatWeight(e.weightPercent)}</span>}
+                  </span>
                 </li>
               ))}
             </ul>

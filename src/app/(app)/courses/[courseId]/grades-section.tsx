@@ -48,34 +48,40 @@ export function GradesSection({
             <tr className="border-b border-rule text-left text-ink-muted">
               <th scope="col" className="py-2 font-medium">Category</th>
               <th scope="col" className="py-2 text-right font-medium">Weight</th>
-              <th scope="col" className="py-2 pl-4 font-medium">Scores</th>
-              <th scope="col" className="py-2 text-right font-medium">Average</th>
+              <th scope="col" className="hidden py-2 pl-4 font-medium sm:table-cell">Scores</th>
+              <th scope="col" className="py-2 pl-4 text-right font-medium">Average</th>
             </tr>
           </thead>
           <tbody>
             {components.map((c) => {
               const own = entries.filter((e) => e.component === c.name);
               const avg = summarize([c]).currentPercent;
+              const scores = own.length > 0 && (
+                <ul className="flex flex-wrap gap-x-3 gap-y-1">
+                  {own.map((e) => (
+                    <li key={e.id} className="num flex items-center gap-1">
+                      {e.title ? `${e.title}: ` : ""}{Number(e.earned)}/{Number(e.possible)}
+                      <form action={removeGradeEntry.bind(null, e.id)}>
+                        <button type="submit" className="btn-quiet min-h-6 min-w-6 justify-center px-1" aria-label={`Remove score ${Number(e.earned)} out of ${Number(e.possible)}`}>×</button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+              );
               return (
                 <tr key={c.name} className="border-b border-rule align-top">
                   <th scope="row" className="py-2 text-left font-normal">
                     {c.name}
-                    {c.dropLowest ? <span className="block text-xs text-ink-muted">lowest {c.dropLowest} dropped once all are in</span> : null}
+                    {c.dropLowest ? <span className="block text-xs text-ink-muted">Lowest {c.dropLowest} dropped once all are in</span> : null}
+                    {/* Phones: scores sit under the category instead of in their own column. */}
+                    {scores && <div className="mt-1 text-ink-muted sm:hidden">{scores}</div>}
                   </th>
-                  <td className="num py-2 text-right">{formatWeight(c.weight)}{c.weightIsGuess ? " (guess)" : ""}</td>
-                  <td className="py-2 pl-4">
-                    <ul className="flex flex-wrap gap-x-3 gap-y-1">
-                      {own.map((e) => (
-                        <li key={e.id} className="num flex items-center gap-1">
-                          {e.title ? `${e.title}: ` : ""}{Number(e.earned)}/{Number(e.possible)}
-                          <form action={removeGradeEntry.bind(null, e.id)}>
-                            <button type="submit" className="btn-quiet px-1 text-xs" aria-label={`Remove score ${Number(e.earned)} out of ${Number(e.possible)}`}>×</button>
-                          </form>
-                        </li>
-                      ))}
-                    </ul>
+                  <td className="num py-2 text-right">
+                    {formatWeight(c.weight)}
+                    {c.weightIsGuess && <span className="block text-xs text-ink-muted">guess</span>}
                   </td>
-                  <td className="num py-2 text-right">{avg == null ? "" : pct(avg)}</td>
+                  <td className="hidden py-2 pl-4 sm:table-cell">{scores}</td>
+                  <td className="num py-2 pl-4 text-right">{avg == null ? "" : pct(avg)}</td>
                 </tr>
               );
             })}
