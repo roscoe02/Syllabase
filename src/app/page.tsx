@@ -62,6 +62,11 @@ export default function Home() {
             Sign in
           </Link>
         </div>
+        <p className="text-sm text-ink-muted">
+          By continuing you agree to the{" "}
+          <Link href="/terms" className="underline underline-offset-2">Terms</Link> and{" "}
+          <Link href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>.
+        </p>
       </header>
 
       <section aria-labelledby="sample-h" className="flex flex-col gap-6">
