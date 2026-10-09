@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Markdown } from "@/components/markdown";
 
 type Message = { role: "user" | "assistant"; content: string };
 type Course = { id: string; label: string };
@@ -12,11 +13,6 @@ const STARTERS = [
   "What's the late work policy?",
   "What does the syllabus leave out?",
 ];
-
-/** Renders **bold** spans as <strong>; everything else stays plain text (React escapes it, so no HTML gets through). */
-function withBold(text: string) {
-  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i} className="font-medium">{part}</strong> : part));
-}
 
 /** The conversation: course picker, messages (streamed), and the question box. */
 export function ChatPanel({
@@ -116,7 +112,7 @@ export function ChatPanel({
           messages.map((m, i) => (
             <div key={i} className={m.role === "user" ? "self-end max-w-[85%] rounded-md bg-rule/60 px-3 py-2" : "max-w-[85%]"}>
               <span className="sr-only">{m.role === "user" ? "You:" : "Syllabase:"}</span>
-              <p className="whitespace-pre-wrap">{m.content ? withBold(m.content) : busy ? "Thinking…" : ""}</p>
+              {m.role === "assistant" && m.content ? <Markdown>{m.content}</Markdown> : <p className="whitespace-pre-wrap">{m.content || (busy ? "Thinking…" : "")}</p>}
             </div>
           ))
         )}

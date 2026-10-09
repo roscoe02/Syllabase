@@ -5,7 +5,8 @@ import { getCourse, getProfile } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { courseLabel, formatDay, formatTime, formatWeight } from "@/lib/format";
-import { deleteCourse } from "./actions";
+import { deleteCourse, removeDocument } from "./actions";
+import { MaterialsUpload } from "./materials-upload";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
@@ -32,7 +33,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
   const [data, { timezone: tz }] = await Promise.all([getCourse(supabase, courseId), getProfile(supabase)]);
   if (!data) notFound(); // also what another student's course id looks like, thanks to RLS
 
-  const { course, syllabus, events } = data;
+  const { course, syllabus, events, documents } = data;
   const parsed = syllabus?.parsed;
   const undated = parsed?.graded_items.filter((i) => !i.due_date) ?? [];
   const now = new Date().toISOString();
@@ -123,6 +124,34 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-labelledby="materials-h" className="flex flex-col gap-3">
+        <div>
+          <h2 id="materials-h" className="font-medium">Study materials</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Notes, slides, past exams or rubrics. Study tools build cheat sheets, quizzes and flashcards from them.
+          </p>
+        </div>
+        {documents.length > 0 && (
+          <ul className="divide-y divide-rule border-y border-rule">
+            {documents.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2">
+                <span className="mr-auto break-all">{d.filename}</span>
+                <span className="text-sm text-ink-muted">{d.kind.replace("_", " ")}</span>
+                <form action={removeDocument.bind(null, d.id)}>
+                  <ConfirmSubmit message={`Remove ${d.filename}?`} className="btn-quiet px-0 text-sm">Remove</ConfirmSubmit>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex flex-wrap items-center gap-4">
+          <MaterialsUpload courseId={course.id} />
+          {documents.length > 0 && (
+            <Link href={`/study?course=${course.id}`} className="btn-secondary">Study with these</Link>
+          )}
+        </div>
       </section>
 
       {parsed && POLICY_LABELS.some(([k]) => parsed.policies[k]) && (

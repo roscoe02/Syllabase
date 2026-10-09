@@ -68,7 +68,7 @@ export const PRESETS: StudyPreset[] = [
 - Formulas, definitions, and rules first; one-line "when to use it" for each.
 - Include a "commonly confused" section that contrasts look-alike concepts.
 - Include a short "traps" list: mistakes students make on exams with this material.
-- Use compact Markdown (headings, tables, bullet fragments). Use LaTeX ($...$) for math.
+- Use compact Markdown (headings, tables, bullet fragments).
 - If the syllabus or professor says what is allowed on a crib sheet, respect it and say so at the top.
 No intro, no outro.`,
   },
@@ -120,7 +120,7 @@ concept step by step. End with the misunderstanding that traps most students and
     inputs: ["topic", "materials"],
     system: `Break the topic into:
 - The 3 core concepts everything else builds on
-- How each connects to the others (also output a Mermaid \`graph TD\` diagram of the connections)
+- How each connects to the others
 - The most common test questions about each
 - What a trick-question version looks like`,
   },
@@ -269,6 +269,9 @@ done at that step but do not finish the problem. If the same error type repeats,
 Don't re-explain the whole thing.`,
   },
 ];
+
+/** Tools that work from the student's files (notes, slides, past exams, a draft). */
+export const usesFiles = (p: StudyPreset) => p.inputs.some((i) => i === "materials" || i === "draft");
 
 export function getPreset(id: string): StudyPreset | undefined {
   return PRESETS.find((p) => p.id === id);
