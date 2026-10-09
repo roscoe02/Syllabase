@@ -69,6 +69,9 @@ check("B cannot read A's usage", (await as(B, `select * from public.usage_daily`
 const tA = await as(A, `insert into public.chat_threads (user_id) values ('${A}') returning id`);
 check("B cannot post into A's chat thread", !(await as(B, `insert into public.chat_messages (thread_id, user_id, role, content) values ('${tA.rows[0].id}', '${B}', 'user', '"hi"')`)).ok);
 check("B cannot add grades to A's course", !(await as(B, `insert into public.grade_entries (user_id, course_id, component, earned, possible) values ('${B}', '${courseA}', 'HW', 1, 1)`)).ok);
+check("A can save a weight guess for own course", (await as(A, `insert into public.grade_weights (course_id, user_id, component, weight_percent, is_guess) values ('${courseA}', '${A}', 'Participation', 5, true)`)).ok);
+check("B cannot change A's grade weights", !(await as(B, `insert into public.grade_weights (course_id, user_id, component, weight_percent, is_guess) values ('${courseA}', '${B}', 'Quizzes', 50, true)`)).ok
+  && (await as(B, `update public.grade_weights set weight_percent = 99 where course_id = '${courseA}' returning 1`)).rows.length === 0);
 check("storage: A can write under own folder", (await as(A, `insert into storage.objects (bucket_id, name) values ('documents', '${A}/doc/a.pdf')`)).ok);
 check("storage: A cannot write into B's folder", !(await as(A, `insert into storage.objects (bucket_id, name) values ('documents', '${B}/doc/a.pdf')`)).ok);
 check("bucket has 20MB limit + type allowlist", (await db.query(`select file_size_limit, array_length(allowed_mime_types,1) n from storage.buckets`)).rows[0].file_size_limit == 20971520);

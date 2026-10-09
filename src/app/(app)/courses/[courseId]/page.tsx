@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/data/user";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { courseLabel, formatDay, formatTime, formatWeight } from "@/lib/format";
 import { deleteCourse, removeDocument } from "./actions";
+import { GradesSection } from "./grades-section";
 import { MaterialsUpload } from "./materials-upload";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
@@ -33,7 +34,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
   const [data, { timezone: tz }] = await Promise.all([getCourse(supabase, courseId), getProfile(supabase)]);
   if (!data) notFound(); // also what another student's course id looks like, thanks to RLS
 
-  const { course, syllabus, events, documents } = data;
+  const { course, syllabus, events, documents, weights, entries } = data;
   const parsed = syllabus?.parsed;
   const undated = parsed?.graded_items.filter((i) => !i.due_date) ?? [];
   const now = new Date().toISOString();
@@ -97,6 +98,8 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
           <p className="text-ink-muted">No grade weights in the syllabus.</p>
         )}
       </section>
+
+      <GradesSection courseId={course.id} parsed={parsed ?? null} weights={weights} entries={entries} />
 
       <section aria-labelledby="dates-h" className="flex flex-col gap-3">
         <h2 id="dates-h" className="font-medium">Exams and due dates</h2>

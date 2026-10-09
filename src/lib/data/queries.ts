@@ -71,7 +71,7 @@ export async function listSyllabusStatus(supabase: SupabaseClient) {
 }
 
 export async function getCourse(supabase: SupabaseClient, id: string) {
-  const [{ data: course }, { data: syllabus }, { data: events }, { data: documents }] = await Promise.all([
+  const [{ data: course }, { data: syllabus }, { data: events }, { data: documents }, { data: weights }, { data: entries }] = await Promise.all([
     supabase.from("courses").select("id, code, section, title, term, instructor_name, instructor_email").eq("id", id).maybeSingle(),
     supabase
       .from("syllabi")
@@ -87,6 +87,8 @@ export async function getCourse(supabase: SupabaseClient, id: string) {
       .is("replaced_by", null)
       .order("starts_at"),
     supabase.from("documents").select("id, filename, kind, created_at").eq("course_id", id).order("created_at"),
+    supabase.from("grade_weights").select("component, weight_percent, is_guess, drop_lowest").eq("course_id", id),
+    supabase.from("grade_entries").select("id, component, title, earned, possible").eq("course_id", id).order("created_at"),
   ]);
   if (!course) return null;
   return {
@@ -96,5 +98,7 @@ export async function getCourse(supabase: SupabaseClient, id: string) {
       : null,
     events: events ?? [],
     documents: documents ?? [],
+    weights: weights ?? [],
+    entries: entries ?? [],
   };
 }
