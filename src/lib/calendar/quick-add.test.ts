@@ -24,10 +24,12 @@ describe("resolveChanges", () => {
         change({ action: "move", event: "e9", date: "2026-11-19" }), // not shown to Claude
         change({ action: "add", title: "Bad date", date: "2026-02-30" }),
         change({ action: "add", course: "c7", title: "No course ref", date: "2026-10-20", time: "25:00", weight_percent: 140 }),
+        change({ action: "add", course: "cs 3345", title: "Study group", date: "2026-10-21", time: "18:00" }),
       ],
     };
     const res = resolveChanges(out, courses, events, null);
-    expect(res).toHaveLength(3);
+    expect(res).toHaveLength(4);
+    expect(res[3].courseId).toBe(C1); // named instead of referenced
     expect(res[0]).toMatchObject({ action: "add", courseId: C1, courseLabel: "CS 3345", time: "10:00", kind: "quiz" });
     expect(res[1]).toMatchObject({ action: "move", eventId: E1, title: "Midterm 2", date: "2026-11-19", time: null, kind: "exam" });
     expect(res[2]).toMatchObject({ courseId: null, time: null, weightPercent: null });

@@ -70,7 +70,9 @@ export function resolveChanges(out: QuickAddOutput, courses: RefCourse[], events
     if (c.action === "add") {
       const title = c.title.trim().slice(0, 200);
       if (!title || !realDate(c.date)) continue;
-      const courseId = courses.find((x) => x.ref === c.course)?.id ?? defaultCourseId;
+      // Claude sometimes names the course ("CS 3345") instead of giving its ref.
+      const named = c.course.trim().toLowerCase();
+      const courseId = courses.find((x) => x.ref === c.course || (named && x.label.toLowerCase() === named))?.id ?? defaultCourseId;
       changes.push({ action: "add", eventId: null, courseId, courseLabel: label(courseId), title, date: c.date, time, kind: c.kind, weightPercent: weight });
       continue;
     }
