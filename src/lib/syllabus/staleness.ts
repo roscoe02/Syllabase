@@ -3,9 +3,9 @@ import type { ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 /**
  * Is this syllabus for the term the student selected?
  *
- * CourseBook (via Nebula `syllabus_uri`) often still serves last semester's file, so syllabi fetched
- * from there are always run through this check. An "outdated" or "unknown" result shows a banner
- * asking the student to upload the current syllabus; an upload always replaces a CourseBook copy.
+ * Copies found online (UTD CourseBook, for one) are often last semester's file, so every syllabus is
+ * run through this check. An "outdated" or "unknown" result shows a banner asking the student to
+ * upload the current syllabus.
  */
 export type Freshness =
   | { status: "current" }
