@@ -34,7 +34,7 @@ export function Agenda({
   return (
     <ol className="flex flex-col divide-y divide-rule border-y border-rule">
       {[...days].map(([key, dayEvents]) => {
-        const soon = key <= soonKey;
+        const soon = key >= today && key <= soonKey;
         return (
           <li key={key} className="grid gap-2 py-3 sm:grid-cols-[12rem_1fr] sm:gap-6">
             <h3 className="text-sm font-medium">
