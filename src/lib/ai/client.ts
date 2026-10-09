@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 
 /**
  * Single shared Anthropic client. Reads ANTHROPIC_API_KEY from the environment.
@@ -23,3 +24,21 @@ export const MODELS = {
   /** Escalation for hard extraction (e.g. scanned, table-heavy syllabi). */
   strong: "claude-sonnet-5-5",
 } as const;
+
+/**
+ * zodOutputFormat whose check returns null instead of throwing, so a reply that doesn't match the schema still
+ * comes back with its usage (already billed) for the caller to record.
+ */
+export function lenientFormat<S extends Parameters<typeof zodOutputFormat>[0]>(schema: S) {
+  const format = zodOutputFormat(schema);
+  return {
+    ...format,
+    parse: (content: string) => {
+      try {
+        return format.parse(content);
+      } catch {
+        return null;
+      }
+    },
+  };
+}

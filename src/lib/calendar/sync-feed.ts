@@ -27,7 +27,7 @@ export interface SyncResult {
 export async function syncFeed(admin: SupabaseClient, feedId: string, prefetched?: ImportedEvent[]): Promise<SyncResult> {
   const { data: feed, error: feedError } = await admin
     .from("calendar_feeds")
-    .select("id, user_id, url_encrypted, hidden_course_keys")
+    .select("id, user_id, url_encrypted")
     .eq("id", feedId)
     .single();
   if (feedError || !feed) throw feedError ?? new Error("feed not found");
@@ -39,21 +39,22 @@ export async function syncFeed(admin: SupabaseClient, feedId: string, prefetched
   } catch (err) {
     await admin
       .from("calendar_feeds")
-      .update({ last_error: "Couldn't read the calendar link. It may have changed in Canvas." })
+      // Counts as an attempt, so a broken link is retried hourly at most, not on every page load.
+      .update({ last_error: "Couldn't read the calendar link. It may have changed in Canvas.", last_synced_at: new Date().toISOString() })
       .eq("id", feedId)
       .eq("user_id", userId);
     throw err;
   }
 
   const [{ data: profile }, { data: courseRows }, { data: syllabi }, { data: syllabusEvents }] = await Promise.all([
-    admin.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
+    admin.from("profiles").select("timezone, hidden_course_keys").eq("id", userId).maybeSingle(),
     admin.from("courses").select("id, code, section, canvas_key").eq("user_id", userId),
     admin.from("syllabi").select("course_id, parsed").eq("user_id", userId).order("created_at", { ascending: false }),
     admin.from("events").select("id, course_id, title, starts_at, weight_percent").eq("user_id", userId).eq("source", "syllabus"),
   ]);
   const tz: string = profile?.timezone ?? "America/Chicago";
   const courses: CourseRef[] = courseRows ?? [];
-  const hidden = new Set<string>(feed.hidden_course_keys ?? []);
+  const hidden = new Set<string>(profile?.hidden_course_keys ?? []);
 
   // 1. Courses
   let newCourses = 0;

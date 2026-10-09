@@ -1,6 +1,7 @@
 import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { billableUsage } from "./pricing";
 
 /**
  * Per-user daily AI budget, enforced on the server before every Claude call.
@@ -40,12 +41,18 @@ export async function checkQuota(userId: string, isGuest = false): Promise<Respo
 
 export async function recordUsage(userId: string, usage: Anthropic.Usage) {
   const supabase = createAdminClient();
+  const billable = billableUsage({
+    input: usage.input_tokens,
+    output: usage.output_tokens,
+    cacheRead: usage.cache_read_input_tokens ?? 0,
+    cacheWrite: usage.cache_creation_input_tokens ?? 0,
+  });
   const { error } = await supabase.rpc("record_usage", {
     p_user: userId,
-    p_input: usage.input_tokens,
-    p_output: usage.output_tokens,
-    p_cache_read: usage.cache_read_input_tokens ?? 0,
-    p_cache_write: usage.cache_creation_input_tokens ?? 0,
+    p_input: billable.input,
+    p_output: billable.output,
+    p_cache_read: billable.cacheRead,
+    p_cache_write: billable.cacheWrite,
   });
   if (error) console.error("recordUsage failed", { userId, code: error.code });
 }

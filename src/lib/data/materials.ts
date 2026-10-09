@@ -2,22 +2,32 @@ import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const MAX_TOTAL_BYTES = 25 * 1024 * 1024;
+import { MAX_IMAGE_BYTES } from "@/lib/files";
+
+// Base64 grows files by a third and the API caps a request at 32 MB, so 20 MB of files in total.
+const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 
 /**
  * The student's selected files as content blocks for Claude: PDFs and text as documents, photos as images.
- * User-scoped client, so RLS only returns their own documents. Stops adding files past 25 MB in total.
+ * User-scoped client, so RLS only returns their own documents. Files that would push the total past the cap
+ * (or photos over the API's 5 MB) are left out.
  */
 export async function loadMaterialBlocks(supabase: SupabaseClient, documentIds: string[]): Promise<Anthropic.ContentBlockParam[]> {
   if (documentIds.length === 0) return [];
   const { data: docs } = await supabase.from("documents").select("id, filename, mime_type, size_bytes, storage_path").in("id", documentIds);
-  const blocks: Anthropic.ContentBlockParam[] = [];
   let total = 0;
-  for (const doc of docs ?? []) {
-    if (total + doc.size_bytes > MAX_TOTAL_BYTES) break;
-    const { data: file } = await supabase.storage.from("documents").download(doc.storage_path);
+  const chosen = (docs ?? []).filter((d) => {
+    if (d.mime_type.startsWith("image/") && d.size_bytes > MAX_IMAGE_BYTES) return false;
+    if (total + d.size_bytes > MAX_TOTAL_BYTES) return false;
+    total += d.size_bytes;
+    return true;
+  });
+  const files = await Promise.all(chosen.map((d) => supabase.storage.from("documents").download(d.storage_path)));
+
+  const blocks: Anthropic.ContentBlockParam[] = [];
+  for (const [i, doc] of chosen.entries()) {
+    const file = files[i].data;
     if (!file) continue;
-    total += doc.size_bytes;
     const bytes = Buffer.from(await file.arrayBuffer());
     if (doc.mime_type === "application/pdf") {
       blocks.push({ type: "document", title: doc.filename, source: { type: "base64", media_type: "application/pdf", data: bytes.toString("base64") } });

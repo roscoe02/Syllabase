@@ -1,7 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { anthropic, MODELS } from "@/lib/ai/client";
+import { anthropic, lenientFormat, MODELS } from "@/lib/ai/client";
 import { checkQuota, recordUsage } from "@/lib/ai/quota";
 import { textResponse } from "@/lib/ai/stream";
 import { loadCourseContext } from "@/lib/data/chat";
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
         max_tokens: 8000,
         system,
         messages: [{ role: "user", content }],
-        output_config: { format: zodOutputFormat(preset.output === "flashcards" ? Flashcards : Quiz) },
+        output_config: { format: preset.output === "flashcards" ? lenientFormat(Flashcards) : lenientFormat(Quiz) },
       });
       await recordUsage(userId, response.usage);
       if (!response.parsed_output) return Response.json({ error: "Couldn't build that. Try different materials." }, { status: 502 });

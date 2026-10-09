@@ -47,6 +47,8 @@ check("B cannot attach an event to A's course", !(await as(B, `insert into publi
 check("A can add an event to own course", (await as(A, `insert into public.events (user_id, course_id, source, title, starts_at) values ('${A}', '${courseA}', 'manual', 'x', now())`)).ok);
 check("B cannot insert rows as A", !(await as(B, `insert into public.courses (user_id, code) values ('${A}', 'evil')`)).ok);
 check("A cannot change own export token directly", !(await as(A, `update public.profiles set ics_export_token = 'aaaa' where id = '${A}'`)).ok);
+check("A can hide a removed feed course", (await as(A, `update public.profiles set hidden_course_keys = '{3345.001}' where id = '${A}'`)).ok);
+check("B cannot change A's hidden courses", (await as(B, `update public.profiles set hidden_course_keys = '{}' where id = '${A}' returning 1`)).rows.length === 0);
 check("A can change display name", (await as(A, `update public.profiles set display_name = 'Ann' where id = '${A}'`)).ok);
 const before = (await db.query(`select ics_export_token t from public.profiles where id = '${A}'`)).rows[0].t;
 const regen = await as(A, `select public.regenerate_ics_token() t`);
