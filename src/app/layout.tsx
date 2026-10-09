@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { DM_Mono, Schibsted_Grotesk } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+const ui = Schibsted_Grotesk({
+  variable: "--font-ui",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+// Dates, times, course codes and numbers line up in tabular mono.
+const data = DM_Mono({
+  variable: "--font-data",
   subsets: ["latin"],
   weight: ["400", "500"],
 });
@@ -22,8 +23,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-sans">
+    <html lang="en" className={`${ui.variable} ${data.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-paper font-sans text-ink">
         {children}
         <footer className="mt-auto border-t border-rule px-4 py-6 text-sm text-ink-muted">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-x-6 gap-y-2">

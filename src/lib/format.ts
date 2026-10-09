@@ -12,6 +12,11 @@ export function formatKeyLong(key: string) {
   return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "long", month: "long", day: "numeric" }).format(new Date(`${key}T12:00:00Z`));
 }
 
+/** "Sat, Oct 10" for a date key. */
+export function formatKeyDay(key: string) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(new Date(`${key}T12:00:00Z`));
+}
+
 export function formatKeyShort(key: string) {
   return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(`${key}T12:00:00Z`));
 }

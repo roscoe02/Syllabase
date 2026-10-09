@@ -8,7 +8,7 @@ questions about your classes, study with tools that run on your own notes, and s
 **Live demo:** [syllabase-app.vercel.app](https://syllabase-app.vercel.app). Click "Try it as a guest" to explore three
 sample courses, no sign-up needed.
 
-![A sample syllabus next to the calendar Syllabase builds from it](.github/screenshots/landing.png)
+![Dashboard: what is due in the next few days, the busiest week ahead and grades so far](.github/screenshots/dashboard.png)
 
 ## What it does
 
@@ -32,9 +32,13 @@ sample courses, no sign-up needed.
 | --- | --- |
 | ![Month calendar with deadlines from three courses](.github/screenshots/calendar-dark.png) | ![Grade calculator showing current grade and what is needed for each letter](.github/screenshots/grades.png) |
 
-| Study mode in chat | Phone |
+| From syllabus to calendar | Phone |
 | --- | --- |
-| ![Feynman check pointing out mistakes in a student's explanation](.github/screenshots/chat-feynman.png) | ![Dashboard on a phone in dark mode](.github/screenshots/phone-dashboard-dark.png) |
+| ![A sample syllabus next to the calendar Syllabase builds from it](.github/screenshots/landing.png) | ![Dashboard on a phone in dark mode](.github/screenshots/phone-dashboard-dark.png) |
+
+| Study mode in chat |
+| --- |
+| ![Feynman check pointing out mistakes in a student's explanation](.github/screenshots/chat-feynman.png) |
 
 ## How it works
 

@@ -42,8 +42,8 @@ export function MonthGrid({ month, events, tz, today }: { month: string; events:
               const dayEvents = byDay.get(key) ?? [];
               return (
                 <td key={key} className="h-24 border-b border-rule align-top">
-                  <div className={`flex flex-col gap-1 p-1 ${inMonth ? "" : "opacity-50"}`}>
-                    <span className={`num self-start text-xs ${key === today ? "bg-highlight px-1 font-medium" : "text-ink-muted"}`}>
+                  <div className={`flex flex-col gap-1 p-1 ${inMonth ? "" : "text-ink-muted"}`}>
+                    <span className={`num self-start text-xs ${key === today ? "rounded-sm bg-accent px-1.5 font-medium text-accent-ink" : "text-ink-muted"}`}>
                       {Number(key.slice(8))}
                       {key === today && <span className="sr-only"> (today)</span>}
                     </span>

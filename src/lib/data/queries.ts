@@ -1,4 +1,6 @@
 import "server-only";
+import { summarize } from "@/lib/grades/calculator";
+import { courseGradeInputs } from "@/lib/grades/course-grades";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ParsedSyllabus } from "@/lib/ai/syllabus-schema";
 
@@ -102,4 +104,25 @@ export async function getCourse(supabase: SupabaseClient, id: string) {
     weights: weights ?? [],
     entries: entries ?? [],
   };
+}
+
+/** Each course's grade so far from the student's scores, or null when there are none yet. */
+export async function listCurrentGrades(supabase: SupabaseClient): Promise<Map<string, number | null>> {
+  const [{ data: syllabi }, { data: weights }, { data: entries }] = await Promise.all([
+    supabase.from("syllabi").select("course_id, parsed").order("created_at", { ascending: false }),
+    supabase.from("grade_weights").select("course_id, component, weight_percent, is_guess, drop_lowest"),
+    supabase.from("grade_entries").select("course_id, component, earned, possible"),
+  ]);
+  const parsed = new Map<string, ParsedSyllabus>();
+  for (const s of syllabi ?? []) if (!parsed.has(s.course_id)) parsed.set(s.course_id, s.parsed as ParsedSyllabus);
+  const grades = new Map<string, number | null>();
+  for (const id of new Set((entries ?? []).map((e) => e.course_id as string))) {
+    const { components } = courseGradeInputs(
+      parsed.get(id) ?? null,
+      (weights ?? []).filter((w) => w.course_id === id),
+      (entries ?? []).filter((e) => e.course_id === id),
+    );
+    grades.set(id, summarize(components).currentPercent);
+  }
+  return grades;
 }

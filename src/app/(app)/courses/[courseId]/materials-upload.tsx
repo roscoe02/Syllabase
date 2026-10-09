@@ -47,7 +47,7 @@ export function MaterialsUpload({ courseId }: { courseId: string }) {
           {KINDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </label>
-      <label className={`btn-primary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink ${state.busy ? "opacity-60" : ""}`}>
+      <label className={`btn-primary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent ${state.busy ? "opacity-60" : ""}`}>
         {state.busy ? "Uploading" : "Upload a file"}
         <input
           type="file"

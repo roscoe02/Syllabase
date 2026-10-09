@@ -1,36 +1,47 @@
 @import "tailwindcss";
 
-/* Design tokens: paper, ink, one highlighter accent. */
+/* Design tokens: cool off-white, near-black ink, one cobalt accent. Dark mode keeps the same roles. */
 :root {
-  --paper: #faf8f3;
-  --ink: #1c1b19;
-  --ink-muted: #4a4741; /* 8.7:1 on paper */
-  --rule: #ddd8cc;
-  --highlight: #f5d547; /* background only, never text; ink on it: 11.9:1 */
+  --paper: #fafaf9;
+  --surface: #ffffff;
+  --ink: #18181b;
+  --ink-muted: #52525b; /* 7.4:1 on paper */
+  --rule: #e4e4e7;
+  --accent: #2e4fcb; /* 6.6:1 on paper */
+  --accent-ink: #fafaf9;
+  --accent-soft: #eef1fb;
   color-scheme: light; /* native controls (date/time pickers, selects) match the theme */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #17171a;
-    --ink: #ece8df;
-    --ink-muted: #b8b3a8; /* 8.6:1 on dark paper */
-    --rule: #34333a;
-    --highlight: #544608; /* ink on it: 7.6:1 */
+    --paper: #111114;
+    --surface: #18181c;
+    --ink: #f4f4f5;
+    --ink-muted: #a1a1aa; /* 7.8:1 on paper */
+    --rule: #2a2a30;
+    --accent: #8da2f5; /* 7.3:1 on paper */
+    --accent-ink: #111114;
+    --accent-soft: #1b2238;
     color-scheme: dark;
   }
 }
 
 @theme inline {
   --color-paper: var(--paper);
+  --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-rule: var(--rule);
-  --color-highlight: var(--highlight);
-  --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
-  --radius-sm: 2px;
-  --radius-md: 4px;
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-highlight: var(--accent-soft);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-data);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
 }
 
 body {
@@ -38,8 +49,13 @@ body {
   color: var(--ink);
 }
 
+/* Checkboxes, radios and range inputs use the accent too. */
+input {
+  accent-color: var(--accent);
+}
+
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -55,19 +71,19 @@ body {
 /* Shared controls. Flat, ruled, one radius. */
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md bg-ink px-4 py-2 font-medium text-paper disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 font-medium text-accent-ink transition-colors hover:bg-accent/90 active:translate-y-px disabled:opacity-60;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md border border-ink px-4 py-2 font-medium disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-md border border-rule bg-surface px-4 py-2 font-medium transition-colors hover:border-ink-muted active:translate-y-px disabled:opacity-60;
   }
   .btn-quiet {
-    @apply inline-flex items-center rounded-md px-2 py-1 text-ink-muted underline underline-offset-2;
+    @apply inline-flex items-center rounded-md px-2 py-1 text-ink-muted underline underline-offset-2 transition-colors hover:text-ink;
   }
   .input {
-    @apply w-full rounded-md border border-rule bg-paper px-3 py-2 text-ink;
+    @apply w-full rounded-md border border-rule bg-surface px-3 py-2 text-ink;
   }
   .input:focus-visible {
-    outline: 2px solid var(--ink);
+    outline: 2px solid var(--accent);
     outline-offset: 0;
   }
   .skeleton {
@@ -90,7 +106,7 @@ body {
 .markdown ul { list-style: disc; }
 .markdown ol { list-style: decimal; }
 .markdown a { text-decoration: underline; text-underline-offset: 2px; }
-.markdown code { font-family: var(--font-plex-mono); font-size: 0.9em; }
+.markdown code { font-family: var(--font-data); font-size: 0.9em; }
 .markdown pre { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; padding: 0.5rem; }
 .markdown table { border-collapse: collapse; width: 100%; font-size: 0.875rem; display: block; overflow-x: auto; }
 .markdown th, .markdown td { border: 1px solid var(--rule); padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; }

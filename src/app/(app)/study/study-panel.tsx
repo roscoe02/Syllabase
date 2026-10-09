@@ -75,7 +75,7 @@ export function StudyPanel({ tools, courses, documents, initialCourse }: { tools
           <legend className="label mb-2">Tool</legend>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {tools.map((t) => (
-              <label key={t.id} className={`flex cursor-pointer flex-col gap-1 rounded-md border p-3 ${t.id === toolId ? "border-ink" : "border-rule hover:border-ink-muted"}`}>
+              <label key={t.id} className={`flex cursor-pointer flex-col gap-1 rounded-md border p-3 ${t.id === toolId ? "border-accent bg-accent-soft" : "border-rule bg-surface hover:border-ink-muted"}`}>
                 <span className="flex items-center gap-2">
                   <input type="radio" name="tool" value={t.id} checked={t.id === toolId} onChange={() => pickTool(t)} />
                   <span className="font-medium">{t.title}</span>
