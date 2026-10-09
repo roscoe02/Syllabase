@@ -60,6 +60,10 @@ export default function PrivacyPage() {
           When you use the AI features, the relevant files, syllabus details and messages are sent to Anthropic for that
           request only.
         </p>
+        <p className="text-ink-muted">
+          For UT Dallas courses, Syllabase looks up your professor&apos;s name on Rate My Professors and reads public grade
+          records from GitHub. Nothing about you is sent with those lookups.
+        </p>
       </section>
 
       <section aria-labelledby="delete-h" className="flex flex-col gap-3">

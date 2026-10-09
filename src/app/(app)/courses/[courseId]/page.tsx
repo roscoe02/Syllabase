@@ -5,9 +5,11 @@ import { getCourse, getProfile } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { courseLabel, formatDay, formatTime, formatWeight } from "@/lib/format";
+import { courseParts } from "@/lib/integrations/utd-grade-data";
 import { deleteCourse, removeDocument } from "./actions";
 import { GradesSection } from "./grades-section";
 import { MaterialsUpload } from "./materials-upload";
+import { UtdInsights } from "./utd-insights";
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
@@ -38,6 +40,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
   const parsed = syllabus?.parsed;
   const undated = parsed?.graded_items.filter((i) => !i.due_date) ?? [];
   const now = new Date().toISOString();
+  const parts = courseParts(course.code);
 
   return (
     <>
@@ -100,6 +103,12 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
       </section>
 
       <GradesSection courseId={course.id} parsed={parsed ?? null} weights={weights} entries={entries} />
+
+      {parts && (
+        <Suspense fallback={<div className="skeleton h-64 w-full max-w-md" aria-busy="true" aria-label="Loading past grades" />}>
+          <UtdInsights subject={parts.subject} number={parts.number} instructor={course.instructor_name} />
+        </Suspense>
+      )}
 
       <section aria-labelledby="dates-h" className="flex flex-col gap-3">
         <h2 id="dates-h" className="font-medium">Exams and due dates</h2>
