@@ -89,7 +89,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
                 <tr key={g.name} className="border-b border-rule">
                   <th scope="row" className="py-2 text-left font-normal">{g.name}</th>
                   <td className="num py-2 text-right">{formatWeight(g.weight_percent) ?? <span className="text-ink-muted">missing</span>}</td>
-                  <td className="num py-2 text-right text-ink-muted">{g.drop_lowest ? `lowest ${g.drop_lowest}` : ""}</td>
+                  <td className="py-2 text-right text-ink-muted">{g.drop_lowest ? `Lowest ${g.drop_lowest}` : ""}</td>
                 </tr>
               ))}
             </tbody>
@@ -110,7 +110,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
             {events.map((e) => (
               <li key={e.id} className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2 ${e.starts_at < now && !e.all_day ? "text-ink-muted" : ""}`}>
                 <span className="num w-28 shrink-0 text-sm">{formatDay(e.starts_at, tz)}</span>
-                <span className="num w-16 shrink-0 text-sm text-ink-muted">{e.all_day ? "" : formatTime(e.starts_at, tz)}</span>
+                <span className="num w-20 shrink-0 whitespace-nowrap text-sm text-ink-muted">{e.all_day ? "" : formatTime(e.starts_at, tz)}</span>
                 <span className={e.kind === "exam" ? "font-medium" : ""}>{e.title}</span>
                 {formatWeight(e.weight_percent == null ? null : Number(e.weight_percent)) && (
                   <span className="num text-sm text-ink-muted">{formatWeight(Number(e.weight_percent))}</span>
@@ -121,7 +121,7 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
             {undated.map((i, n) => (
               <li key={`undated-${n}`} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2">
                 <span className="w-28 shrink-0 text-sm text-ink-muted">No date yet</span>
-                <span className="w-16 shrink-0" />
+                <span className="w-20 shrink-0" />
                 <span>{i.title}</span>
               </li>
             ))}

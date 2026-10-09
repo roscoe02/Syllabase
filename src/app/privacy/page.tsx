@@ -1,4 +1,6 @@
 // TODO: write the full policy before launch.
+export const metadata = { title: "Privacy · Syllabase" };
+
 export default function PrivacyPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-16">
