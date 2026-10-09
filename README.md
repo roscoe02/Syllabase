@@ -22,6 +22,8 @@ sample courses, no sign-up needed.
   slides and past exams you upload.
 - **Grade calculator.** Enter scores as you get them back and see your current grade and what you need on the rest of the
   course for an A, B or C, with drop-lowest rules applied.
+- **UT Dallas grades and professors.** Each UTD course page shows how past sections were graded, the same for your
+  professor's own sections, their Rate My Professors summary, and a link to UTD Trends.
 - **Calendar export.** Subscribe from Google, Apple or Outlook Calendar and new deadlines show up there too.
 
 | Calendar (dark mode) | Grade calculator |
@@ -70,6 +72,9 @@ to your Supabase project in order.
 ## Credits
 
 Made with [Claude](https://claude.ai). Set in [IBM Plex](https://github.com/IBM/plex) (SIL Open Font License).
+UTD grade distributions from [acmutd/utd-grades](https://github.com/acmutd/utd-grades) (MIT; Texas public records).
+Professor ratings from [Rate My Professors](https://www.ratemyprofessors.com/), shown as summaries with a link to the profile.
+Course links go to [UTD Trends](https://trends.utdnebula.com/) by Nebula Labs.
 Syllabase is an independent student project, not affiliated with The University of Texas at Dallas.
 
 ## License

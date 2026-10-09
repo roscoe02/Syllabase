@@ -1,4 +1,6 @@
 import "server-only";
+import { cacheLife } from "next/cache";
+import { samePerson, splitName } from "./utd-grade-data";
 
 /**
  * Rate My Professors lookup (UNOFFICIAL — no public API).
@@ -6,7 +8,7 @@ import "server-only";
  * Uses the same GraphQL endpoint as UTD Trends (MIT) src/modules/fetchRmp.ts.
  * RMP's terms prohibit automated scraping, so this is deliberately limited:
  *  - server-side only, one professor at a time, only for courses a user added
- *  - cached for 7 days; never bulk-crawled
+ *  - cached for about a week; never bulk-crawled
  *  - aggregates only (no review text stored or sent to the LLM)
  *  - always attributed + linked to the RMP profile
  *  - RMP_ENABLED=false is a kill switch; the UI always shows a "View on RMP" link
@@ -34,8 +36,22 @@ const QUERY = `query ($text: String!, $schoolID: ID!) {
   } } } }
 }`;
 
+type Node = Omit<RmpSummary, "name" | "url"> & { firstName: string; lastName: string };
+
+/** The profile for this name with the most ratings. Search results include other people with similar names. */
+export function pickProfessor(nodes: Node[], fullName: string): Node | null {
+  const who = splitName(fullName);
+  if (!who) return null;
+  const matches = nodes.filter((n) => samePerson(who, { first: n.firstName.trim().toLowerCase(), last: n.lastName.trim().toLowerCase() }));
+  return matches.sort((a, b) => b.numRatings - a.numRatings)[0] ?? null;
+}
+
 export async function lookupProfessor(fullName: string, schoolId = UTD_SCHOOL_ID): Promise<RmpSummary | null> {
+  "use cache";
+  cacheLife("weeks");
   if (process.env.RMP_ENABLED === "false") return null;
+  const who = splitName(fullName);
+  if (!who) return null;
   let res: Response;
   try {
     res = await fetch(ENDPOINT, {
@@ -45,18 +61,15 @@ export async function lookupProfessor(fullName: string, schoolId = UTD_SCHOOL_ID
         Authorization: "Basic dGVzdDp0ZXN0",
         Referer: "https://www.ratemyprofessors.com/",
       },
-      body: JSON.stringify({ query: QUERY, variables: { text: fullName, schoolID: schoolId } }),
-      next: { revalidate: 60 * 60 * 24 * 7 },
+      body: JSON.stringify({ query: QUERY, variables: { text: `${who.first} ${who.last}`.trim(), schoolID: schoolId } }),
     });
   } catch {
     return null; // RMP unreachable: the UI falls back to rmpSearchUrl()
   }
   if (!res.ok) return null;
-  const json = await res.json();
-  type Node = Omit<RmpSummary, "name" | "url"> & { firstName: string; lastName: string };
+  const json = await res.json().catch(() => null);
   const nodes: Node[] = json?.data?.newSearch?.teachers?.edges?.map((e: { node: Node }) => e.node) ?? [];
-  // Same heuristic as UTD Trends: the matching profile with the most ratings wins.
-  const best = nodes.sort((a, b) => b.numRatings - a.numRatings)[0];
+  const best = pickProfessor(nodes, fullName);
   if (!best) return null;
   return {
     legacyId: best.legacyId,
