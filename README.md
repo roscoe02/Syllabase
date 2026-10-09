@@ -14,8 +14,8 @@ sample courses, no sign-up needed.
 
 - **Syllabus to calendar.** Claude reads each PDF syllabus and pulls out the grading breakdown, graded items, dates and
   policies. You review everything before it's saved, and anything the syllabus leaves out is shown as missing instead of guessed.
-- **Canvas sync.** Paste your Canvas calendar feed link. New assignments appear on their own and are matched to the
-  syllabus items they duplicate, so nothing shows up twice.
+- **Canvas sync.** Paste your Canvas calendar feed link. New assignments appear on their own, and ones that match a
+  syllabus item (same course, number and similar name) replace it instead of showing up twice.
 - **Chat that knows your classes.** Ask "when is my next exam and how much is it worth?" and get an answer from your
   syllabi and calendar. Study modes turn the chat into a Feynman check, a finals coach, lecture recovery and more.
 - **Study tools.** Cheat sheets, flashcards, practice quizzes, concept maps and an exam predictor built from the notes,

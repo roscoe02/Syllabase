@@ -276,3 +276,9 @@ export const usesFiles = (p: StudyPreset) => p.inputs.some((i) => i === "materia
 export function getPreset(id: string): StudyPreset | undefined {
   return PRESETS.find((p) => p.id === id);
 }
+
+/** A preset that can run as a chat study mode; anything else (unknown, or one-shot) is not a mode. */
+export function getStudyMode(id: string | null | undefined): StudyPreset | undefined {
+  const preset = id ? getPreset(id) : undefined;
+  return preset?.mode === "interactive" ? preset : undefined;
+}

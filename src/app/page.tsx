@@ -95,7 +95,8 @@ export default function Home() {
           </figure>
           <div className="flex flex-col gap-4">
             <p className="text-sm text-ink-muted">What Syllabase shows, next to your other classes</p>
-            <Agenda events={EVENTS} tz={TZ} today={TODAY} linkCourses={false} empty={null} />
+            {/* No "due soon" highlight: the sample week is fixed, so it would mark old dates as soon. */}
+            <Agenda events={EVENTS} tz={TZ} today={TODAY} soonDays={0} linkCourses={false} empty={null} />
             <div className="flex flex-col gap-2 text-sm">
               <p className="font-medium">Not in the syllabus</p>
               <ul className="flex flex-wrap gap-2">
