@@ -71,3 +71,7 @@ to your Supabase project in order.
 
 Made with [Claude](https://claude.ai). Set in [IBM Plex](https://github.com/IBM/plex) (SIL Open Font License).
 Syllabase is an independent student project, not affiliated with The University of Texas at Dallas.
+
+## License
+
+[MIT](LICENSE)
