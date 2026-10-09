@@ -7,7 +7,7 @@ import { loadCourseContext } from "@/lib/data/chat";
 import { loadMaterialBlocks } from "@/lib/data/materials";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { parseBody, requireUser, serverError } from "@/lib/security/request";
-import { BASE_RULES, getPreset, usesFiles } from "@/lib/study/presets";
+import { BASE_RULES, getStudyMode, usesFiles } from "@/lib/study/presets";
 
 /**
  * POST /api/chat  { message, threadId?, courseId?, mode? }
@@ -31,6 +31,10 @@ inside <course_materials>: parsed syllabus facts, the calendar from their syllab
 - For dates, use the calendar and today's date from the materials, and give the weekday and date.
 - Keep answers short: a few sentences or a short list. Use simple Markdown: "-" lists and **bold** for key dates, no headings.
 - When the student asks for help with graded work, mention the course's AI use policy.`;
+
+/** Kept in every study mode: the mode changes how to teach, not what counts as a fact. */
+const GROUNDING = `Never guess a date, weight or policy for the student's courses: use <course_materials>, and if they
+don't say, say so. When the student asks for help with graded work, mention the course's AI use policy.`;
 
 const MODE_RULES = `The student's course facts and calendar are inside <course_materials>; their uploaded notes, slides
 and past exams for the course, if any, come before it. This is a back-and-forth study session: ask one question
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
   } else {
     courseId = body.data.courseId ?? null;
     modeId = body.data.mode ?? null;
-    if (modeId && getPreset(modeId)?.mode !== "interactive") return Response.json({ error: "Unknown study mode." }, { status: 400 });
+    if (modeId && !getStudyMode(modeId)) return Response.json({ error: "Unknown study mode." }, { status: 400 });
     const { data: thread, error } = await supabase
       .from("chat_threads")
       .insert({ user_id: userId, course_id: courseId, preset_id: modeId, title: message.slice(0, 80) })
@@ -75,15 +79,21 @@ export async function POST(request: Request) {
     threadId = thread.id as string;
   }
 
-  const preset = modeId ? getPreset(modeId) : undefined;
-  const [{ data: history }, context, files] = await Promise.all([
+  const preset = getStudyMode(modeId);
+  const [{ data: history }, context, fileBlocks] = await Promise.all([
     supabase.from("chat_messages").select("role, content").eq("thread_id", threadId).order("created_at", { ascending: false }).limit(HISTORY_LIMIT),
     loadCourseContext(supabase, courseId),
     preset && usesFiles(preset) && courseId
-      ? supabase.from("documents").select("id").eq("course_id", courseId).neq("kind", "syllabus").order("created_at", { ascending: false }).limit(MODE_FILES)
-      : Promise.resolve({ data: [] }),
+      ? supabase
+          .from("documents")
+          .select("id")
+          .eq("course_id", courseId)
+          .neq("kind", "syllabus")
+          .order("created_at", { ascending: false })
+          .limit(MODE_FILES)
+          .then(({ data }) => loadMaterialBlocks(supabase, (data ?? []).map((d) => d.id)))
+      : Promise.resolve([]),
   ]);
-  const fileBlocks = await loadMaterialBlocks(supabase, (files.data ?? []).map((d) => d.id));
   const { error: saveError } = await supabase.from("chat_messages").insert({ thread_id: threadId, user_id: userId, role: "user", content: message });
   if (saveError) return serverError("chat save question", saveError);
 
@@ -110,7 +120,7 @@ export async function POST(request: Request) {
     system: [
       { type: "text", text: BASE_RULES },
       ...(preset
-        ? [{ type: "text" as const, text: preset.system }, { type: "text" as const, text: MODE_RULES }]
+        ? [{ type: "text" as const, text: preset.system }, { type: "text" as const, text: MODE_RULES }, { type: "text" as const, text: GROUNDING }]
         : [{ type: "text" as const, text: CHAT_RULES }]),
     ],
     messages,

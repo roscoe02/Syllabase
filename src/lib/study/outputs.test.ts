@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Flashcards, Quiz } from "./outputs";
-import { getPreset, PRESETS, usesFiles } from "./presets";
+import { getPreset, getStudyMode, PRESETS, usesFiles } from "./presets";
 
 describe("study outputs", () => {
   it("stay under the structured-output union limit", () => {
@@ -18,5 +18,11 @@ describe("study outputs", () => {
     expect(usesFiles(getPreset("cheat-sheet")!)).toBe(true);
     expect(usesFiles(getPreset("find-the-gaps")!)).toBe(true); // reviews a draft
     expect(usesFiles(getPreset("triage")!)).toBe(false); // works from the calendar
+  });
+  it("only runs conversational tools as chat study modes", () => {
+    expect(getStudyMode("feynman-check")?.id).toBe("feynman-check");
+    expect(getStudyMode("flashcards")).toBeUndefined(); // one-shot
+    expect(getStudyMode("not-a-tool")).toBeUndefined();
+    expect(getStudyMode(null)).toBeUndefined();
   });
 });

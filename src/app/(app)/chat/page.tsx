@@ -4,7 +4,7 @@ import { ConfirmSubmit } from "@/components/confirm-submit";
 import { listCourses } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { courseLabel } from "@/lib/format";
-import { getPreset, PRESETS, usesFiles } from "@/lib/study/presets";
+import { getStudyMode, PRESETS, usesFiles } from "@/lib/study/presets";
 import { deleteThread } from "./actions";
 import { ChatPanel, type Mode } from "./chat-panel";
 
@@ -33,7 +33,7 @@ const MODES: Mode[] = PRESETS.filter((p) => p.mode === "interactive").map((p) =>
 export default function ChatPage({ searchParams }: PageProps<"/chat">) {
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Ask about your courses</h1>
+      <h1 className="text-2xl font-semibold">Chat</h1>
       <Suspense fallback={<div className="skeleton h-96 w-full" aria-busy="true" aria-label="Loading chat" />}>
         <Chat searchParams={searchParams} />
       </Suspense>
@@ -56,7 +56,7 @@ async function Chat({ searchParams }: { searchParams: PageProps<"/chat">["search
       : Promise.resolve({ data: null }),
   ]);
   const courseId = thread?.course_id ?? (courses.some((c) => c.id === courseParam) ? courseParam : null);
-  const mode = thread ? thread.preset_id : modeParam;
+  const mode = thread ? (getStudyMode(thread.preset_id)?.id ?? null) : modeParam;
 
   const [{ data: messages }, { data: syllabus }] = await Promise.all([
     thread
@@ -111,7 +111,7 @@ async function Chat({ searchParams }: { searchParams: PageProps<"/chat">["search
                   <span className="line-clamp-2">{t.title ?? "Untitled chat"}</span>
                   <span className="num block text-xs text-ink-muted">
                     {label(t.course_id)}
-                    {t.preset_id && ` · ${getPreset(t.preset_id)?.title ?? ""}`}
+                    {getStudyMode(t.preset_id) && ` · ${getStudyMode(t.preset_id)?.title}`}
                   </span>
                 </Link>
               </li>
