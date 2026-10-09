@@ -13,6 +13,7 @@ export interface CourseSummary {
   section: string | null;
   title: string | null;
   term: string | null;
+  instructor_name: string | null;
 }
 
 export interface CalendarEvent {
@@ -32,7 +33,7 @@ export async function getProfile(supabase: SupabaseClient) {
 }
 
 export async function listCourses(supabase: SupabaseClient): Promise<CourseSummary[]> {
-  const { data } = await supabase.from("courses").select("id, code, section, title, term").order("code");
+  const { data } = await supabase.from("courses").select("id, code, section, title, term, instructor_name").order("code");
   return data ?? [];
 }
 

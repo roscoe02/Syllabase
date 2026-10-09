@@ -3,12 +3,12 @@ import { after } from "next/server";
 import { Suspense } from "react";
 import { Agenda } from "@/components/agenda";
 import { BigWeeks } from "@/components/big-weeks";
+import { CourseList } from "@/components/course-list";
 import { bigWeeks } from "@/lib/calendar/big-weeks";
 import { syncStaleFeeds } from "@/lib/calendar/sync-feed";
 import { getProfile, listCourses, listEvents, listSyllabusStatus } from "@/lib/data/queries";
 import { getCurrentUser } from "@/lib/data/user";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { courseLabel } from "@/lib/format";
 import { addDaysKey, dateKey, mondayOfKey } from "@/lib/time";
 
 export const metadata = { title: "Dashboard · Syllabase" };
@@ -81,28 +81,9 @@ async function Dashboard() {
       <section aria-labelledby="courses-h" className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
           <h2 id="courses-h" className="font-medium">Courses</h2>
-          <Link href="/courses/new" className="btn-quiet">Add a course</Link>
+          <Link href="/courses" className="btn-quiet">All courses</Link>
         </div>
-        <ul className="divide-y divide-rule border-y border-rule">
-          {courses.map((c) => {
-            const s = status.get(c.id);
-            return (
-              <li key={c.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
-                <Link href={`/courses/${c.id}`} className="num font-medium underline-offset-2 hover:underline">
-                  {courseLabel(c)}{c.section ? `.${c.section}` : ""}
-                </Link>
-                <span className="text-ink-muted">{c.title}</span>
-                {s && s.missing.length > 0 && (
-                  <Link href={`/courses/${c.id}#missing-h`} className="text-sm text-ink-muted underline-offset-2 hover:underline">
-                    Not in syllabus: {s.missing.slice(0, 2).join(", ")}
-                    {s.missing.length > 2 && ` and ${s.missing.length - 2} more`}
-                  </Link>
-                )}
-                {s && s.freshness === "outdated" && <span className="text-sm font-medium">Syllabus may be outdated</span>}
-              </li>
-            );
-          })}
-        </ul>
+        <CourseList courses={courses} status={status} tz={tz} />
       </section>
     </>
   );
