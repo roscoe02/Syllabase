@@ -11,7 +11,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 export default function CoursesPage() {
   return (
-    <main className="flex flex-col gap-6">
+    <main id="main" className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Courses</h1>
         <Link href="/courses/new" className="btn-primary">Add a course</Link>

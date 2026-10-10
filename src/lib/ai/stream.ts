@@ -1,5 +1,6 @@
 import "server-only";
 import type Anthropic from "@anthropic-ai/sdk";
+import { aiErrorMessage } from "./client";
 import { recordUsage } from "./quota";
 
 type ClaudeStream = ReturnType<Anthropic["messages"]["stream"]>;
@@ -36,7 +37,7 @@ export function textResponse(
       } catch (err) {
         await finish(stream.currentMessage?.usage);
         console.error("claude stream failed", err instanceof Error ? err.name : err);
-        controller.enqueue(encoder.encode("\n\n[Something went wrong. Please try again.]"));
+        controller.enqueue(encoder.encode(`\n\n[${aiErrorMessage(err, "Something went wrong. Please try again.")}]`));
         controller.close();
       }
     },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { aiErrorMessage } from "@/lib/ai/client";
 import { ExtractionError, extractSyllabusFromPdf } from "@/lib/ai/extract-syllabus";
 import { checkQuota, recordUsage } from "@/lib/ai/quota";
 import { rateLimit } from "@/lib/security/rate-limit";
@@ -64,6 +65,6 @@ export async function POST(request: Request) {
     return Response.json({ syllabus, freshness });
   } catch (err) {
     if (err instanceof ExtractionError) await recordUsage(userId, err.usage);
-    return serverError("syllabus/parse extract", err, "We couldn't read that syllabus. Try another file.");
+    return serverError("syllabus/parse extract", err, aiErrorMessage(err, "We couldn't read that syllabus. Try another file."));
   }
 }

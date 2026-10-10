@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps<"/courses/[courseId
 
 export default function CoursePage({ params }: PageProps<"/courses/[courseId]">) {
   return (
-    <main className="flex flex-col gap-10">
+    <main id="main" className="flex flex-col gap-10">
       <Suspense fallback={<CourseSkeleton />}>
         <Course params={params} />
       </Suspense>
@@ -113,12 +113,6 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
 
       <GradesSection courseId={course.id} parsed={parsed ?? null} weights={weights} entries={entries} />
 
-      {parts && (
-        <Suspense fallback={<div className="skeleton h-64 w-full max-w-md" aria-busy="true" aria-label="Loading past grades" />}>
-          <UtdInsights subject={parts.subject} number={parts.number} instructor={course.instructor_name} />
-        </Suspense>
-      )}
-
       <section aria-labelledby="dates-h" className="flex flex-col gap-3">
         <h2 id="dates-h" className="font-medium">Exams and due dates</h2>
         {events.length === 0 && undated.length === 0 ? (
@@ -187,6 +181,13 @@ async function Course({ params }: { params: PageProps<"/courses/[courseId]">["pa
             ))}
           </dl>
         </section>
+      )}
+
+      {/* Streams in last, after the course's own details, so a late or empty answer doesn't shift them. */}
+      {parts && (
+        <Suspense fallback={<div className="skeleton h-96 w-full max-w-md" aria-busy="true" aria-label="Loading past grades" />}>
+          <UtdInsights subject={parts.subject} number={parts.number} instructor={course.instructor_name} />
+        </Suspense>
       )}
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule pt-6 text-sm">

@@ -72,7 +72,7 @@ export default function PreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
   const thisWeek = "2026-10-05";
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 py-10">
+    <main id="main" className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 py-10">
       <section id="dashboard" className="flex flex-col gap-10">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <div className="flex flex-col gap-3">

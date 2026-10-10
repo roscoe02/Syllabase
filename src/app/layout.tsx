@@ -33,6 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script>{THEME_SCRIPT}</script>
       </head>
       <body className="flex min-h-full flex-col bg-paper font-sans text-ink">
+        <a href="#main" className="sr-only rounded-md bg-accent px-3 py-2 text-accent-ink focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-10">
+          Skip to content
+        </a>
         {children}
         <footer className="mt-auto border-t border-rule px-4 py-6 text-sm text-ink-muted">
           <div className="mx-auto flex w-full max-w-5xl flex-wrap gap-x-6 gap-y-2">

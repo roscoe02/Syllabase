@@ -15,7 +15,7 @@ export const metadata = { title: "Dashboard · Syllabase" };
 
 export default function DashboardPage() {
   return (
-    <main className="flex flex-col gap-10">
+    <main id="main" className="flex flex-col gap-10">
       <Suspense fallback={<DashboardSkeleton />}>
         <Dashboard />
       </Suspense>

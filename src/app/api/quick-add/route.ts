@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { anthropic, lenientFormat, MODELS } from "@/lib/ai/client";
+import { aiErrorMessage, anthropic, lenientFormat, MODELS } from "@/lib/ai/client";
 import { checkQuota, recordUsage } from "@/lib/ai/quota";
 import { MAX_CHANGES, QuickAddOutput, resolveChanges, type RefCourse, type RefEvent } from "@/lib/calendar/quick-add";
 import { getProfile } from "@/lib/data/queries";
@@ -116,6 +116,6 @@ export async function POST(request: Request) {
     const changes = resolveChanges(response.parsed_output, courses, events, selected?.id ?? null);
     return Response.json({ reply: response.parsed_output.reply, changes });
   } catch (err) {
-    return serverError("quick add", err, "Couldn't work that out. Try again.");
+    return serverError("quick add", err, aiErrorMessage(err, "Couldn't work that out. Try again."));
   }
 }

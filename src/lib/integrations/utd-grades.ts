@@ -24,17 +24,25 @@ export interface CourseGrades {
   professor: Distribution | null;
 }
 
-/** Throws when a file can't be fetched, so an outage isn't cached as "no data". */
-export async function courseGrades(subject: string, number: string, instructor: string | null): Promise<CourseGrades | null> {
-  "use cache";
+/**
+ * One course's rows from each term file. Cached across servers (each serverless instance's memory is short-lived)
+ * and keyed by course only, so every professor's page reuses one download. Throws when a file can't be fetched,
+ * so an outage isn't cached as "no data".
+ */
+async function courseRows(subject: string, number: string) {
+  "use cache: remote";
   cacheLife("weeks");
-  const files = await Promise.all(
+  return Promise.all(
     TERMS.map(async ([file]) => {
       const res = await fetch(`${SOURCE}${file}.csv`);
       if (!res.ok) throw new Error(`utd-grades ${file}: ${res.status}`);
       return parseGradeCsv(await res.text(), subject, number);
     }),
   );
+}
+
+export async function courseGrades(subject: string, number: string, instructor: string | null): Promise<CourseGrades | null> {
+  const files = await courseRows(subject, number);
   const rows = files.flat();
   if (rows.length === 0) return null;
   const terms = TERMS.filter((_, i) => files[i].length > 0).map(([, name]) => name);

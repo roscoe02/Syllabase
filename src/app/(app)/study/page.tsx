@@ -24,7 +24,7 @@ const TOOLS: Tool[] = PRESETS.filter((p) => p.mode === "one-shot" && p.output !=
 
 export default function StudyPage({ searchParams }: PageProps<"/study">) {
   return (
-    <main className="flex flex-col gap-6">
+    <main id="main" className="flex flex-col gap-6">
       <header className="no-print flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Study tools</h1>
         <p className="text-ink-muted">Turn your notes, slides and past exams into cheat sheets, flashcards and practice quizzes.</p>

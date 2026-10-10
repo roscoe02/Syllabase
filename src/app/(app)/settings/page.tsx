@@ -15,7 +15,7 @@ const COMMON_ZONES = ["America/New_York", "America/Chicago", "America/Denver", "
 
 export default function SettingsPage() {
   return (
-    <main className="flex flex-col gap-10">
+    <main id="main" className="flex flex-col gap-10">
       <h1 className="text-2xl font-semibold">Settings</h1>
       <Suspense fallback={<div className="skeleton h-64 w-full max-w-2xl" aria-busy="true" aria-label="Loading settings" />}>
         <Settings />

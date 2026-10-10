@@ -47,7 +47,7 @@ export function pickProfessor(nodes: Node[], fullName: string): Node | null {
 }
 
 export async function lookupProfessor(fullName: string, schoolId = UTD_SCHOOL_ID): Promise<RmpSummary | null> {
-  "use cache";
+  "use cache: remote";
   cacheLife("weeks");
   if (process.env.RMP_ENABLED === "false") return null;
   const who = splitName(fullName);
