@@ -10,7 +10,7 @@ export const metadata = { title: "Calendar · Syllabase" };
 
 export default function CalendarPage({ searchParams }: PageProps<"/calendar">) {
   return (
-    <main className="flex flex-col gap-6">
+    <main id="main" className="flex flex-col gap-6">
       <Suspense fallback={<CalendarSkeleton />}>
         <Calendar searchParams={searchParams} />
       </Suspense>

@@ -1,6 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { anthropic, lenientFormat, MODELS } from "@/lib/ai/client";
+import { aiErrorMessage, anthropic, lenientFormat, MODELS } from "@/lib/ai/client";
 import { checkQuota, recordUsage } from "@/lib/ai/quota";
 import { textResponse } from "@/lib/ai/stream";
 import { loadCourseContext } from "@/lib/data/chat";
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       if (!response.parsed_output) return Response.json({ error: "Couldn't build that. Try different materials." }, { status: 502 });
       return Response.json({ kind: preset.output, result: response.parsed_output });
     } catch (err) {
-      return serverError("study structured", err, "Couldn't build that. Try again.");
+      return serverError("study structured", err, aiErrorMessage(err, "Couldn't build that. Try again."));
     }
   }
 

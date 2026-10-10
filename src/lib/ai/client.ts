@@ -42,3 +42,10 @@ export function lenientFormat<S extends Parameters<typeof zodOutputFormat>[0]>(s
     },
   };
 }
+
+/** Anthropic refuses every request once the prepaid credit runs out; say that plainly instead of a generic error. */
+export function aiErrorMessage(err: unknown, fallback: string) {
+  return err instanceof Anthropic.APIError && /credit balance/i.test(err.message)
+    ? "AI features are paused right now because this demo's API credit ran out. Everything else still works."
+    : fallback;
+}

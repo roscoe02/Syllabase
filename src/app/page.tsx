@@ -49,7 +49,7 @@ const FEATURES = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 py-16 sm:py-24">
+    <main id="main" className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 py-16 sm:py-24">
       <header className="flex max-w-3xl flex-col gap-4">
         <h1 className="text-4xl font-semibold">Syllabase</h1>
         <p className="text-lg text-ink-muted">

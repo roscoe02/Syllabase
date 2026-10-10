@@ -7,7 +7,7 @@ export const metadata = { title: "Sign in · Syllabase" };
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-col gap-8 px-4 py-24">
+    <main id="main" className="mx-auto flex w-full max-w-sm flex-col gap-8 px-4 py-24">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold">Sign in to Syllabase</h1>
         <p className="text-ink-muted">Your syllabi, uploads and calendar are saved to your account.</p>

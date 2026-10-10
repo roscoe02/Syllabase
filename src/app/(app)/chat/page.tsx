@@ -42,7 +42,7 @@ const MODES: Mode[] = [
 
 export default function ChatPage({ searchParams }: PageProps<"/chat">) {
   return (
-    <main className="flex flex-col gap-6">
+    <main id="main" className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Chat</h1>
       <Suspense fallback={<div className="skeleton h-96 w-full" aria-busy="true" aria-label="Loading chat" />}>
         <Chat searchParams={searchParams} />
